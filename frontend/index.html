@@ -70,6 +70,9 @@ let PASSWORD = '';
 let CURRENT_USER = null;
 
 function zoneLabel(z) { return (z.code ? z.code + ' - ' : '') + z.name; }
+function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function basicAuth() { return 'Basic ' + btoa(USERNAME + ':' + PASSWORD); }
 function authHeaders() { return {'Authorization': basicAuth(), 'Content-Type': 'application/json'}; }
 function authHeadersNoBody() { return {'Authorization': basicAuth()}; }
@@ -124,6 +127,7 @@ function updateUserNav() {
 }
 
 let currentTab = '';
+let editingRequestId = null;
 function showTab(tab) {
     currentTab = tab;
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -283,9 +287,23 @@ async function renderRequests() {
     h += '<button onclick="submitRequest()">Создать</button></div>';
     h += '<div class="card"><h3>Список</h3>';
     const sb = s => ({draft:'badge-gray',sent:'badge-blue',waiting:'badge-yellow',answered:'badge-green',closed:'badge-gray'}[s]||'badge-gray');
+    const statusOptions = ['draft','sent','waiting','answered','closed'];
     list.forEach(r => {
-        h += '<div class="list-item"><b>' + r.title + '</b> <span class="badge ' + sb(r.status) + '">' + r.status + '</span><br><small>' + (r.contractor_name||'') + (r.due_at ? ' | Срок: ' + r.due_at : '') + '</small>';
-        h += ' <button style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="editRequest(' + r.id + ')">&#9998;</button></div>';
+        h += '<div class="list-item"><b>' + esc(r.title) + '</b> <span class="badge ' + sb(r.status) + '">' + r.status + '</span><br><small>' + esc(r.contractor_name||'') + (r.due_at ? ' | Срок: ' + r.due_at : '') + '</small>';
+        h += ' <button style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="toggleRequestEditor(' + r.id + ')">&#9998;</button>';
+        if (editingRequestId === r.id) {
+            h += '<div style="margin-top:10px;">';
+            h += '<div class="form-group"><label>Название</label><input id="er-title" value="' + esc(r.title) + '"></div>';
+            h += '<div class="form-group"><label>Подрядчик</label><select id="er-contr"><option value="">-</option>' + contractors.map(c => '<option value="' + c.id + '"' + (r.contractor_id === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>Статус</label><select id="er-status">' + statusOptions.map(s => '<option value="' + s + '"' + (r.status === s ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>Срок</label><input type="date" id="er-due" value="' + esc(r.due_at || '') + '"></div>';
+            h += '<div class="form-group"><label>Описание</label><textarea id="er-summary">' + esc(r.summary || '') + '</textarea></div>';
+            h += '<div class="form-group"><label>Следующее действие</label><input id="er-next" value="' + esc(r.next_action || '') + '"></div>';
+            h += '<button onclick="saveRequest(' + r.id + ')" style="margin-right:8px;">Сохранить</button>';
+            h += '<button onclick="deleteRequest(' + r.id + ')" style="background:#c62828;">Удалить</button>';
+            h += '</div>';
+        }
+        h += '</div>';
     });
     h += '</div>';
     document.getElementById('app').innerHTML = h;
@@ -299,11 +317,30 @@ async function submitRequest() {
     await api('/api/requests', {method:'POST', body: JSON.stringify(data)});
     renderRequests();
 }
-async function editRequest(id) {
-    const r = (await api('/api/requests')).find(x => x.id === id);
-    if(!r) return;
-    const ns = prompt('Новый статус (draft/sent/waiting/answered/closed):', r.status);
-    if(ns && ns !== r.status) { await api('/api/requests/' + id, {method:'PUT', body: JSON.stringify({status: ns})}); renderRequests(); }
+function toggleRequestEditor(id) {
+    editingRequestId = editingRequestId === id ? null : id;
+    renderRequests();
+}
+
+async function saveRequest(id) {
+    const data = {
+        title: document.getElementById('er-title').value,
+        status: document.getElementById('er-status').value,
+        contractor_id: document.getElementById('er-contr').value ? +document.getElementById('er-contr').value : null,
+        due_at: document.getElementById('er-due').value || null,
+        summary: document.getElementById('er-summary').value || null,
+        next_action: document.getElementById('er-next').value || null
+    };
+    await api('/api/requests/' + id, {method:'PUT', body: JSON.stringify(data)});
+    editingRequestId = null;
+    renderRequests();
+}
+
+async function deleteRequest(id) {
+    if (!confirm('Удалить заявку из списка? Связанные письма останутся в архиве.')) return;
+    await api('/api/requests/' + id, {method:'DELETE'});
+    editingRequestId = null;
+    renderRequests();
 }
 
 // === EMAILS ===

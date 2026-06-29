@@ -146,6 +146,7 @@ def init_db():
     _ensure_column(conn, "zones", "notes", "TEXT")
     _ensure_column(conn, "zones", "active", "INTEGER NOT NULL DEFAULT 1")
     _rebuild_zones_without_name_unique(conn)
+    _ensure_column(conn, "requests", "deleted_at", "TEXT")
     conn.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_zones_code ON zones(code) WHERE code IS NOT NULL AND code != ''"
     )

@@ -1,4 +1,5 @@
 from datetime import date as date_type
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 
@@ -40,7 +41,7 @@ def create_request(data: dict):
 @router.get("/requests")
 def list_requests(status: str | None = None, contractor: int | None = Query(None)):
     db = get_db()
-    sql = "SELECT r.*, c.name as contractor_name FROM requests r LEFT JOIN contractors c ON r.contractor_id = c.id WHERE 1=1"
+    sql = "SELECT r.*, c.name as contractor_name FROM requests r LEFT JOIN contractors c ON r.contractor_id = c.id WHERE r.deleted_at IS NULL"
     params = []
     if status:
         sql += " AND r.status = ?"
@@ -72,6 +73,18 @@ def update_request(request_id: int, data: dict):
     return dict(row)
 
 
+@router.delete("/requests/{request_id}")
+def delete_request(request_id: int):
+    db = get_db()
+    db.execute(
+        "UPDATE requests SET deleted_at = ? WHERE id = ?",
+        (datetime.utcnow().isoformat(timespec="seconds"), request_id),
+    )
+    db.commit()
+    db.close()
+    return {"ok": True}
+
+
 @router.get("/requests/overdue")
 def overdue_requests():
     db = get_db()
@@ -79,7 +92,7 @@ def overdue_requests():
     rows = db.execute(
         """SELECT r.*, c.name as contractor_name FROM requests r
            LEFT JOIN contractors c ON r.contractor_id = c.id
-           WHERE r.due_at < ? AND r.status NOT IN ('closed', 'answered')
+           WHERE r.deleted_at IS NULL AND r.due_at < ? AND r.status NOT IN ('closed', 'answered')
            ORDER BY r.due_at""",
         (today,),
     ).fetchall()
