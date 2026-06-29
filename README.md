@@ -29,5 +29,7 @@ https://home.46.225.65.120.sslip.io
 | `ADMIN_USERNAME` | `admin` | Username for the first seeded admin account |
 | `AUTH_PASSWORD` | required | Password used by the web app |
 | `DB_PATH` | `/data/krotka.db` | SQLite database path inside the container |
-| `LATITUDE` | `52.2297` | Weather lookup latitude |
-| `LONGITUDE` | `21.0122` | Weather lookup longitude |
+| `LATITUDE` | `54.5189` | Weather lookup latitude |
+| `LONGITUDE` | `18.5305` | Weather lookup longitude |
+| `WEATHER_PAST_DAYS` | `30` | Number of past weather days to keep refreshing |
+| `WEATHER_FORECAST_DAYS` | `5` | Number of forecast days to fetch |

@@ -155,6 +155,24 @@ async function renderDashboard() {
         });
         h += '</div>';
     }
+    if (d.weather_forecast && d.weather_forecast.length) {
+        h += '<div class="card"><h3>Прогноз дождя</h3>';
+        d.weather_forecast.forEach(w => {
+            const rain = w.rain_mm !== null && w.rain_mm !== undefined ? Number(w.rain_mm).toFixed(1) : '?';
+            const temp = w.temp_max !== null && w.temp_max !== undefined ? ' | до ' + Number(w.temp_max).toFixed(0) + '&deg;C' : '';
+            const cls = Number(w.rain_mm || 0) >= 5 ? 'badge-blue' : Number(w.rain_mm || 0) > 0 ? 'badge-yellow' : 'badge-gray';
+            h += '<div class="list-item">' + w.date + ': <span class="badge ' + cls + '">' + rain + ' мм</span>' + temp + '</div>';
+        });
+        h += '</div>';
+    }
+    if (d.rain_history && d.rain_history.length) {
+        h += '<div class="card"><h3>Осадки в Гдыне</h3>';
+        if (d.rain_totals) h += '<div class="list-item">За 7 дней: <b>' + Number(d.rain_totals.last_7_days || 0).toFixed(1) + ' мм</b> | за 30 дней: <b>' + Number(d.rain_totals.last_30_days || 0).toFixed(1) + ' мм</b></div>';
+        d.rain_history.forEach(w => {
+            h += '<div class="list-item">' + w.date + ': ' + Number(w.rain_mm || 0).toFixed(1) + ' мм</div>';
+        });
+        h += '</div>';
+    }
     if (d.last_mowing) {
         const m = d.last_mowing;
         h += '<div class="card"><h3>Покос</h3><div>Последний: ' + (m.date || 'нет данных') + ' (' + (m.days_since !== null ? m.days_since + ' дн. назад' : '?') + ')</div>';

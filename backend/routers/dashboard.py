@@ -94,11 +94,44 @@ def dashboard():
     ).fetchall()
     overdue_responses = [r["title"] for r in overdue]
 
+    weather_forecast = db.execute(
+        """SELECT date, temp_max, temp_min, rain_mm
+           FROM weather_daily
+           WHERE date >= ?
+           ORDER BY date
+           LIMIT 5""",
+        (today_str,),
+    ).fetchall()
+
+    rain_history = db.execute(
+        """SELECT date, rain_mm
+           FROM weather_daily
+           WHERE date < ?
+           ORDER BY date DESC
+           LIMIT 14""",
+        (today_str,),
+    ).fetchall()
+    rain_7d = db.execute(
+        """SELECT COALESCE(SUM(rain_mm), 0) as total
+           FROM weather_daily
+           WHERE date < ? AND date >= ?""",
+        (today_str, (today - timedelta(days=7)).isoformat()),
+    ).fetchone()["total"]
+    rain_30d = db.execute(
+        """SELECT COALESCE(SUM(rain_mm), 0) as total
+           FROM weather_daily
+           WHERE date < ? AND date >= ?""",
+        (today_str, (today - timedelta(days=30)).isoformat()),
+    ).fetchone()["total"]
+
     db.close()
     return {
         "recommendations": recommendations,
         "last_watering": last_watering,
         "last_mowing": last_mowing,
+        "weather_forecast": [dict(r) for r in weather_forecast],
+        "rain_history": [dict(r) for r in rain_history],
+        "rain_totals": {"last_7_days": rain_7d, "last_30_days": rain_30d},
         "open_requests": open_count,
         "overdue_responses": overdue_responses,
     }

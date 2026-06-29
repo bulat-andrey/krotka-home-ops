@@ -8,6 +8,8 @@ from database import get_db
 
 LATITUDE = os.environ.get("LATITUDE", "52.2297")
 LONGITUDE = os.environ.get("LONGITUDE", "21.0122")
+WEATHER_PAST_DAYS = int(os.environ.get("WEATHER_PAST_DAYS", "30"))
+WEATHER_FORECAST_DAYS = int(os.environ.get("WEATHER_FORECAST_DAYS", "5"))
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 
 
@@ -18,8 +20,8 @@ async def fetch_weather():
         "longitude": LONGITUDE,
         "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum",
         "timezone": "auto",
-        "past_days": 2,
-        "forecast_days": 3,
+        "past_days": WEATHER_PAST_DAYS,
+        "forecast_days": WEATHER_FORECAST_DAYS,
     }
     async with httpx.AsyncClient() as client:
         resp = await client.get(OPEN_METEO_URL, params=params)
