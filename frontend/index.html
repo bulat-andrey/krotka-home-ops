@@ -218,6 +218,7 @@ async function renderDashboard() {
 
 // === WATERING ===
 let zones = [];
+let editingZoneId = null;
 async function renderZones() {
     zones = await api('/api/zones');
     let h = '<h2>Зоны</h2><div class="card"><h3>Новая зона</h3>';
@@ -228,8 +229,35 @@ async function renderZones() {
     h += '<div class="form-group"><label>Заметки</label><input id="z-notes" placeholder="туя, самшит, склон, рядом с парковкой"></div>';
     h += '<button onclick="submitZone()">Создать</button><p id="z-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p></div>';
     h += '<div class="card"><h3>Список</h3>';
+    const typeOptions = [
+        ['lawn', 'Газон'],
+        ['bushes', 'Кустарники'],
+        ['new_plants', 'Новые посадки'],
+        ['tree', 'Дерево'],
+        ['hedge', 'Живая изгородь'],
+        ['other', 'Другое']
+    ];
+    const sunOptions = [
+        ['sun', 'Солнце'],
+        ['partial', 'Полутень'],
+        ['shade', 'Тень'],
+        ['mixed', 'Смешано']
+    ];
     zones.forEach(z => {
-        h += '<div class="list-item"><b>' + zoneLabel(z) + '</b><br><small>' + (z.type || '') + (z.sun_exposure ? ' | ' + z.sun_exposure : '') + (z.notes ? ' | ' + z.notes : '') + '</small><br><button style="padding:4px 8px;font-size:12px;min-height:auto;margin-top:6px;background:#777;" onclick="deactivateZone(' + z.id + ')">Отключить</button></div>';
+        h += '<div class="list-item"><b>' + zoneLabel(z) + '</b><br><small>' + (z.type || '') + (z.sun_exposure ? ' | ' + z.sun_exposure : '') + (z.notes ? ' | ' + z.notes : '') + '</small><br>';
+        h += '<button style="padding:4px 8px;font-size:12px;min-height:auto;margin-top:6px;" onclick="toggleZoneEditor(' + z.id + ')">&#9998;</button></div>';
+        if (editingZoneId === z.id) {
+            h += '<div style="margin-top:10px;">';
+            h += '<div class="form-group"><label>Код</label><input id="ez-code" value="' + esc(z.code || '') + '"></div>';
+            h += '<div class="form-group"><label>Название</label><input id="ez-name" value="' + esc(z.name || '') + '"></div>';
+            h += '<div class="form-group"><label>Тип</label><select id="ez-type">' + typeOptions.map(o => '<option value="' + o[0] + '"' + (z.type === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>Солнце</label><select id="ez-sun">' + sunOptions.map(o => '<option value="' + o[0] + '"' + (z.sun_exposure === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>Заметки</label><input id="ez-notes" value="' + esc(z.notes || '') + '"></div>';
+            h += '<button onclick="saveZone(' + z.id + ')" style="margin-right:8px;">Сохранить</button>';
+            h += '<button onclick="deactivateZone(' + z.id + ')" style="background:#777;">Отключить</button>';
+            h += '<p id="ez-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p>';
+            h += '</div>';
+        }
     });
     h += '</div>';
     document.getElementById('app').innerHTML = h;
@@ -256,9 +284,38 @@ async function submitZone() {
     renderZones();
 }
 
+function toggleZoneEditor(id) {
+    editingZoneId = editingZoneId === id ? null : id;
+    renderZones();
+}
+
+async function saveZone(id) {
+    const err = document.getElementById('ez-error');
+    err.classList.add('hidden');
+    const data = {
+        code: document.getElementById('ez-code').value.trim(),
+        name: document.getElementById('ez-name').value.trim(),
+        type: document.getElementById('ez-type').value,
+        sun_exposure: document.getElementById('ez-sun').value,
+        notes: document.getElementById('ez-notes').value.trim(),
+        active: true
+    };
+    const r = await fetch('/api/zones/' + id, {method:'PUT', headers: authHeaders(), body: JSON.stringify(data)});
+    if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        err.textContent = body.detail || 'Не удалось сохранить зону';
+        err.classList.remove('hidden');
+        return;
+    }
+    editingZoneId = null;
+    zones = [];
+    renderZones();
+}
+
 async function deactivateZone(id) {
     if (!confirm('Отключить эту зону? История сохранится, но зона исчезнет из активных списков.')) return;
     await api('/api/zones/' + id, {method:'DELETE'});
+    editingZoneId = null;
     zones = [];
     renderZones();
 }
