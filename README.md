@@ -13,6 +13,12 @@ By default the app listens on `http://localhost:8010`, leaving `8000` free for o
 
 Set `AUTH_PASSWORD` in `.env` before exposing the app beyond local development.
 
+On the current host, Caddy publishes Home Ops at:
+
+```text
+https://home.46.225.65.120.sslip.io
+```
+
 ## Configuration
 
 | Variable | Default | Description |
