@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: ./backend
+    ports:
+      - "${HOST_PORT:-8010}:8000"
+    volumes:
+      - ./data:/data
+      - ./frontend:/app/static
+    environment:
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-changeme}
+      DB_PATH: ${DB_PATH:-/data/krotka.db}
+      LATITUDE: ${LATITUDE:-52.2297}
+      LONGITUDE: ${LONGITUDE:-21.0122}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

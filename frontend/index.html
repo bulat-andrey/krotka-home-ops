@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krotka Home Ops</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;color:#333;max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+        .hidden{display:none!important}
+        button,input,select,textarea{font-size:16px}
+        button{padding:12px 20px;border:none;border-radius:8px;background:#2196F3;color:#fff;cursor:pointer;min-height:44px}
+        button:active{opacity:.8}
+        input,select,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px}
+        textarea{resize:vertical;min-height:60px}
+        .card{background:#fff;border-radius:10px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+        .badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:12px;font-weight:600}
+        .badge-green{background:#e8f5e9;color:#2e7d32}
+        .badge-yellow{background:#fff8e1;color:#f57f17}
+        .badge-red{background:#fbe9e7;color:#c62828}
+        .badge-blue{background:#e3f2fd;color:#1565c0}
+        .badge-gray{background:#eee;color:#555}
+        h2{margin-bottom:12px;font-size:18px}
+        h3{margin-bottom:8px;font-size:15px;color:#555}
+        .alert{background:#fff3e0;border-left:4px solid #ff9800;padding:10px;margin-bottom:10px;border-radius:4px;font-size:14px}
+        .alert-red{background:#fbe9e7;border-left-color:#f44336}
+        #app{flex:1;padding:12px;padding-bottom:70px}
+        nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:space-around;max-width:480px;margin:0 auto;z-index:100}
+        nav button{background:none;color:#666;font-size:11px;padding:8px 4px;border-radius:0;min-height:50px;flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+        nav button.active{color:#2196F3}
+        nav button span{font-size:20px}
+        .list-item{padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
+        .list-item:last-child{border-bottom:none}
+        .form-group{margin-bottom:10px}
+        .form-group label{display:block;font-size:13px;color:#666;margin-bottom:4px}
+        .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+        .login-box{background:#fff;padding:30px;border-radius:12px;width:100%;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+        .login-box h1{margin-bottom:20px;text-align:center}
+    </style>
+</head>
+<body>
+
+<div id="login-screen" class="login-wrap">
+    <div class="login-box">
+        <h1>Krotka Home Ops</h1>
+        <input type="password" id="login-pass" placeholder="Пароль">
+        <button onclick="doLogin()" style="width:100%;margin-top:8px;">Войти</button>
+        <p id="login-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;">Неверный пароль</p>
+    </div>
+</div>
+
+<div id="main-app" class="hidden">
+    <div id="app"></div>
+    <nav>
+        <button onclick="showTab('dashboard')" id="tab-dashboard"><span>&#127968;</span>Главная</button>
+        <button onclick="showTab('watering')" id="tab-watering"><span>&#128167;</span>Полив</button>
+        <button onclick="showTab('mowing')" id="tab-mowing"><span>&#127807;</span>Покос</button>
+        <button onclick="showTab('requests')" id="tab-requests"><span>&#128203;</span>Заявки</button>
+        <button onclick="showTab('emails')" id="tab-emails"><span>&#128231;</span>Почта</button>
+        <button onclick="showTab('events')" id="tab-events"><span>&#128218;</span>Журнал</button>
+    </nav>
+</div>
+
+<script>
+let PASSWORD = '';
+
+function basicAuth() { return 'Basic ' + btoa('user:' + PASSWORD); }
+function authHeaders() { return {'Authorization': basicAuth(), 'Content-Type': 'application/json'}; }
+function authHeadersNoBody() { return {'Authorization': basicAuth()}; }
+
+async function api(path, opts = {}) {
+    const isForm = opts.body instanceof FormData;
+    const headers = isForm ? authHeadersNoBody() : authHeaders();
+    const r = await fetch(path, {...opts, headers: {...headers, ...(opts.headers || {})}});
+    if (r.status === 401) { sessionStorage.removeItem('password'); location.reload(); }
+    return r.json();
+}
+
+async function doLogin() {
+    PASSWORD = document.getElementById('login-pass').value;
+    try {
+        const r = await fetch('/api/dashboard', {headers: {'Authorization': basicAuth()}});
+        if (r.ok) {
+            sessionStorage.setItem('password', PASSWORD);
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            showTab('dashboard');
+        } else {
+            document.getElementById('login-error').classList.remove('hidden');
+        }
+    } catch(e) { document.getElementById('login-error').classList.remove('hidden'); }
+}
+
+function init() {
+    PASSWORD = sessionStorage.getItem('password');
+    if (PASSWORD) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        showTab('dashboard');
+    }
+}
+
+let currentTab = '';
+function showTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    ({dashboard: renderDashboard, watering: renderWatering, mowing: renderMowing, requests: renderRequests, emails: renderEmails, events: renderEvents})[tab]();
+}
+
+// === DASHBOARD ===
+async function renderDashboard() {
+    const d = await api('/api/dashboard');
+    let h = '<h2>Главная</h2>';
+    if (d.recommendations && d.recommendations.length) {
+        h += '<div class="card"><h3>Рекомендации</h3>';
+        d.recommendations.forEach(r => {
+            const c = r.status === 'Полить сегодня' ? 'badge-red' : r.status === 'Можно подождать' ? 'badge-yellow' : 'badge-green';
+            h += '<div class="list-item"><b>' + r.zone_name + '</b>: <span class="badge ' + c + '">' + r.status + '</span><br><small>' + (r.reason||'') + '</small></div>';
+        });
+        h += '</div>';
+    }
+    if (d.last_watering) {
+        h += '<div class="card"><h3>Последний полив</h3>';
+        d.last_watering.forEach(w => {
+            const ds = w.days_since !== null ? w.days_since + ' дн. назад' : 'нет данных';
+            h += '<div class="list-item">' + w.zone_name + ': ' + ds + '</div>';
+        });
+        h += '</div>';
+    }
+    if (d.last_mowing) {
+        const m = d.last_mowing;
+        h += '<div class="card"><h3>Покос</h3><div>' + (m.date || 'нет данных') + ' (' + (m.days_since !== null ? m.days_since + ' дн.' : '?') + ')';
+        if (m.overdue) h += ' <span class="badge badge-red">Просрочено!</span>';
+        h += '</div></div>';
+    }
+    if (d.open_requests > 0) h += '<div class="alert">Открытых заявок: ' + d.open_requests + '</div>';
+    if (d.overdue_responses && d.overdue_responses.length) h += '<div class="alert alert-red">Просрочены: ' + d.overdue_responses.join(', ') + '</div>';
+    document.getElementById('app').innerHTML = h;
+}
+
+// === WATERING ===
+let zones = [];
+async function renderWatering() {
+    if (!zones.length) zones = await api('/api/zones');
+    const history = await api('/api/watering');
+    const last = await api('/api/watering/last');
+    let h = '<h2>Полив</h2><div class="card"><h3>Состояние</h3>';
+    last.forEach(z => { h += '<div class="list-item">' + z.name + ': ' + (z.days_since !== null ? z.days_since + ' дн. назад' : 'нет') + '</div>'; });
+    h += '</div><div class="card"><h3>Записать полив</h3>';
+    h += '<div class="form-group"><label>Зона</label><select id="w-zone">' + zones.map(z => '<option value="' + z.id + '">' + z.name + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>Длительность (мин)</label><input type="number" id="w-dur" value="15"></div>';
+    h += '<div class="form-group"><label>Метод</label><select id="w-method"><option value="дождеватель">Дождеватель</option><option value="пистолет">Пистолет</option></select></div>';
+    h += '<div class="form-group"><label>Заметки</label><input id="w-notes"></div>';
+    h += '<button onclick="submitWatering()">Сохранить</button></div>';
+    h += '<div class="card"><h3>История</h3>';
+    history.slice(0, 20).forEach(e => {
+        const zn = zones.find(z => z.id === e.zone_id);
+        h += '<div class="list-item">' + e.date + ' - ' + (zn ? zn.name : '?') + ' - ' + (e.duration_min||'?') + ' мин (' + (e.method||'') + ')</div>';
+    });
+    h += '</div>';
+    document.getElementById('app').innerHTML = h;
+}
+async function submitWatering() {
+    await api('/api/watering', {method:'POST', body: JSON.stringify({zone_id:+document.getElementById('w-zone').value, duration_minutes:+document.getElementById('w-dur').value, method:document.getElementById('w-method').value, notes:document.getElementById('w-notes').value})});
+    renderWatering();
+}
+
+// === MOWING ===
+async function renderMowing() {
+    const list = await api('/api/mowing');
+    const contractors = await api('/api/contractors');
+    let h = '<h2>Покос</h2><div class="card"><h3>Записать покос</h3>';
+    h += '<div class="form-group"><label>Дата</label><input type="date" id="m-date" value="' + new Date().toISOString().slice(0,10) + '"></div>';
+    h += '<div class="form-group"><label>Подрядчик</label><select id="m-contr"><option value="">-</option>' + contractors.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>Качество (1-5)</label><input type="number" id="m-qual" min="1" max="5"></div>';
+    h += '<div class="form-group"><label>Заметки</label><input id="m-notes"></div>';
+    h += '<div class="form-group"><label>Фото</label><input type="file" id="m-photos" multiple accept="image/*"></div>';
+    h += '<button onclick="submitMowing()">Сохранить</button></div>';
+    h += '<div class="card"><h3>История</h3>';
+    list.slice(0, 20).forEach(e => { h += '<div class="list-item">' + e.date + ' - ' + (e.contractor_name||'?') + ' - Качество: ' + (e.quality||'?') + (e.notes ? ' (' + e.notes + ')' : '') + '</div>'; });
+    h += '</div>';
+    document.getElementById('app').innerHTML = h;
+}
+async function submitMowing() {
+    const fd = new FormData();
+    fd.append('date', document.getElementById('m-date').value);
+    const c = document.getElementById('m-contr').value; if(c) fd.append('contractor_id', c);
+    const q = document.getElementById('m-qual').value; if(q) fd.append('quality', q);
+    const n = document.getElementById('m-notes').value; if(n) fd.append('notes', n);
+    const files = document.getElementById('m-photos').files;
+    for(let i=0;i<files.length;i++) fd.append('photos', files[i]);
+    await fetch('/api/mowing', {method:'POST', headers: authHeadersNoBody(), body: fd});
+    renderMowing();
+}
+
+// === REQUESTS ===
+async function renderRequests() {
+    const list = await api('/api/requests');
+    const contractors = await api('/api/contractors');
+    let h = '<h2>Заявки</h2><div class="card"><h3>Новая заявка</h3>';
+    h += '<div class="form-group"><label>Название</label><input id="r-title"></div>';
+    h += '<div class="form-group"><label>Подрядчик</label><select id="r-contr"><option value="">-</option>' + contractors.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>Статус</label><select id="r-status"><option value="draft">Черновик</option><option value="sent">Отправлено</option><option value="waiting">Ожидание</option><option value="answered">Ответ</option><option value="closed">Закрыто</option></select></div>';
+    h += '<div class="form-group"><label>Срок</label><input type="date" id="r-due"></div>';
+    h += '<div class="form-group"><label>Описание</label><textarea id="r-summary"></textarea></div>';
+    h += '<div class="form-group"><label>Следующее действие</label><input id="r-next"></div>';
+    h += '<button onclick="submitRequest()">Создать</button></div>';
+    h += '<div class="card"><h3>Список</h3>';
+    const sb = s => ({draft:'badge-gray',sent:'badge-blue',waiting:'badge-yellow',answered:'badge-green',closed:'badge-gray'}[s]||'badge-gray');
+    list.forEach(r => {
+        h += '<div class="list-item"><b>' + r.title + '</b> <span class="badge ' + sb(r.status) + '">' + r.status + '</span><br><small>' + (r.contractor_name||'') + (r.due_at ? ' | Срок: ' + r.due_at : '') + '</small>';
+        h += ' <button style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="editRequest(' + r.id + ')">&#9998;</button></div>';
+    });
+    h += '</div>';
+    document.getElementById('app').innerHTML = h;
+}
+async function submitRequest() {
+    const data = {title: document.getElementById('r-title').value, status: document.getElementById('r-status').value};
+    const c = document.getElementById('r-contr').value; if(c) data.contractor_id = +c;
+    const d = document.getElementById('r-due').value; if(d) data.due_at = d;
+    const s = document.getElementById('r-summary').value; if(s) data.summary = s;
+    const n = document.getElementById('r-next').value; if(n) data.next_action = n;
+    await api('/api/requests', {method:'POST', body: JSON.stringify(data)});
+    renderRequests();
+}
+async function editRequest(id) {
+    const r = (await api('/api/requests')).find(x => x.id === id);
+    if(!r) return;
+    const ns = prompt('Новый статус (draft/sent/waiting/answered/closed):', r.status);
+    if(ns && ns !== r.status) { await api('/api/requests/' + id, {method:'PUT', body: JSON.stringify({status: ns})}); renderRequests(); }
+}
+
+// === EMAILS ===
+async function renderEmails() {
+    const list = await api('/api/emails');
+    const reqs = await api('/api/requests');
+    let h = '<h2>Почта</h2>';
+    h += '<div class="card"><div class="form-group"><label>Фильтр по заявке</label><select id="e-filter" onchange="filterEmails()"><option value="">Все</option>' + reqs.map(r => '<option value="' + r.id + '">' + r.title + '</option>').join('') + '</select></div></div>';
+    h += '<div class="card"><h3>Сохранить письмо</h3>';
+    h += '<div class="form-group"><label>Заявка</label><select id="e-req"><option value="">-</option>' + reqs.map(r => '<option value="' + r.id + '">' + r.title + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>Направление</label><select id="e-dir"><option value="outgoing">Исходящее</option><option value="incoming">Входящее</option></select></div>';
+    h += '<div class="form-group"><label>Отправитель</label><input id="e-sender"></div>';
+    h += '<div class="form-group"><label>Получатель</label><input id="e-recip"></div>';
+    h += '<div class="form-group"><label>Тема</label><input id="e-subj"></div>';
+    h += '<div class="form-group"><label>Текст</label><textarea id="e-body"></textarea></div>';
+    h += '<div class="form-group"><label>Вложения</label><input type="file" id="e-attach" multiple></div>';
+    h += '<button onclick="submitEmail()">Сохранить</button></div>';
+    h += '<div class="card" id="email-list"><h3>Архив</h3>';
+    list.slice(0, 30).forEach(e => { h += '<div class="list-item">' + (e.direction==='outgoing'?'&#8594;':'&#8592;') + ' <b>' + (e.subject||'(без темы)') + '</b><br><small>' + (e.sender||'') + ' &rarr; ' + (e.recipient||'') + ' | ' + (e.sent_at||'') + '</small></div>'; });
+    h += '</div>';
+    document.getElementById('app').innerHTML = h;
+}
+async function filterEmails() {
+    const rid = document.getElementById('e-filter').value;
+    const list = await api(rid ? '/api/emails?request_id=' + rid : '/api/emails');
+    let h = '<h3>Архив</h3>';
+    list.forEach(e => { h += '<div class="list-item">' + (e.direction==='outgoing'?'&#8594;':'&#8592;') + ' <b>' + (e.subject||'(без темы)') + '</b><br><small>' + (e.sender||'') + ' &rarr; ' + (e.recipient||'') + ' | ' + (e.sent_at||'') + '</small></div>'; });
+    document.getElementById('email-list').innerHTML = h;
+}
+async function submitEmail() {
+    const fd = new FormData();
+    const req = document.getElementById('e-req').value; if(req) fd.append('request_id', req);
+    fd.append('direction', document.getElementById('e-dir').value);
+    fd.append('sender', document.getElementById('e-sender').value);
+    fd.append('recipient', document.getElementById('e-recip').value);
+    fd.append('subject', document.getElementById('e-subj').value);
+    fd.append('body', document.getElementById('e-body').value);
+    fd.append('sent_at', new Date().toISOString());
+    const files = document.getElementById('e-attach').files;
+    for(let i=0;i<files.length;i++) fd.append('attachments', files[i]);
+    await fetch('/api/emails', {method:'POST', headers: authHeadersNoBody(), body: fd});
+    renderEmails();
+}
+
+// === EVENTS ===
+async function renderEvents() {
+    const list = await api('/api/events');
+    let h = '<h2>Журнал</h2><div class="card">';
+    if(!list.length) h += '<p>Нет событий</p>';
+    list.forEach(e => {
+        const lbl = {watering:'Полив',mowing:'Покос',request:'Заявка'}[e.type] || e.type || '?';
+        const cls = e.type==='watering'?'badge-blue':e.type==='mowing'?'badge-green':'badge-yellow';
+        h += '<div class="list-item"><span class="badge ' + cls + '">' + lbl + '</span> <b>' + e.title + '</b><br><small>' + (e.date||'') + (e.description ? ' - ' + e.description : '') + '</small></div>';
+    });
+    h += '</div>';
+    document.getElementById('app').innerHTML = h;
+}
+
+init();
+</script>
+</body>
+</html>
