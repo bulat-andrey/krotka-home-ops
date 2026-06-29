@@ -173,6 +173,31 @@ async function renderDashboard() {
         });
         h += '</div>';
     }
+    if (d.wind) {
+        const threshold = Number(d.wind.threshold_kt || 14);
+        h += '<div class="card"><h3>Ветер</h3>';
+        h += '<div class="list-item">За 30 дней: <b>' + (d.wind.windy_days_30d || 0) + '</b> дн. с часом >= ' + threshold.toFixed(0) + ' kt</div>';
+        if (d.wind.forecast && d.wind.forecast.length) {
+            h += '<h3>Ближайшие дни</h3>';
+            d.wind.forecast.forEach(w => {
+                const maxWind = Number(w.max_wind_kt || 0);
+                const hours = Number(w.hours_over_threshold || 0);
+                const cls = maxWind >= threshold ? 'badge-blue' : 'badge-gray';
+                h += '<div class="list-item">' + w.date + ': <span class="badge ' + cls + '">' + maxWind.toFixed(1) + ' kt</span> max';
+                if (hours) h += ' | ' + hours + ' ч >= ' + threshold.toFixed(0) + ' kt';
+                h += '</div>';
+            });
+        }
+        if (d.wind.history && d.wind.history.length) {
+            h += '<h3>Последние дни</h3>';
+            d.wind.history.slice(0, 7).forEach(w => {
+                h += '<div class="list-item">' + w.date + ': max ' + Number(w.max_wind_kt || 0).toFixed(1) + ' kt';
+                if (Number(w.hours_over_threshold || 0)) h += ' | ' + Number(w.hours_over_threshold) + ' ч >= ' + threshold.toFixed(0) + ' kt';
+                h += '</div>';
+            });
+        }
+        h += '</div>';
+    }
     if (d.last_mowing) {
         const m = d.last_mowing;
         h += '<div class="card"><h3>Покос</h3><div>Последний: ' + (m.date || 'нет данных') + ' (' + (m.days_since !== null ? m.days_since + ' дн. назад' : '?') + ')</div>';

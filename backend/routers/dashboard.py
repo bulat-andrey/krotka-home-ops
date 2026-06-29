@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+import os
 
 from fastapi import APIRouter, Depends
 
@@ -9,6 +10,7 @@ router = APIRouter(dependencies=[Depends(verify_auth)])
 
 MOWING_INTERVAL_DAYS = 21
 MOWING_REQUEST_LEAD_DAYS = 4
+WIND_THRESHOLD_KT = float(os.environ.get("WIND_THRESHOLD_KT", "14"))
 
 
 @router.get("/api/dashboard")
@@ -124,6 +126,40 @@ def dashboard():
         (today_str, (today - timedelta(days=30)).isoformat()),
     ).fetchone()["total"]
 
+    wind_start_30d = (today - timedelta(days=30)).isoformat()
+    wind_history = db.execute(
+        """SELECT date,
+                  MAX(wind_speed_kt) as max_wind_kt,
+                  SUM(CASE WHEN wind_speed_kt >= ? THEN 1 ELSE 0 END) as hours_over_threshold
+           FROM wind_hourly
+           WHERE date < ? AND date >= ?
+           GROUP BY date
+           ORDER BY date DESC
+           LIMIT 14""",
+        (WIND_THRESHOLD_KT, today_str, wind_start_30d),
+    ).fetchall()
+    windy_days_30d = db.execute(
+        """SELECT COUNT(*) as cnt FROM (
+               SELECT date
+               FROM wind_hourly
+               WHERE date < ? AND date >= ?
+               GROUP BY date
+               HAVING MAX(wind_speed_kt) >= ?
+           )""",
+        (today_str, wind_start_30d, WIND_THRESHOLD_KT),
+    ).fetchone()["cnt"]
+    wind_forecast = db.execute(
+        """SELECT date,
+                  MAX(wind_speed_kt) as max_wind_kt,
+                  SUM(CASE WHEN wind_speed_kt >= ? THEN 1 ELSE 0 END) as hours_over_threshold
+           FROM wind_hourly
+           WHERE date >= ?
+           GROUP BY date
+           ORDER BY date
+           LIMIT 5""",
+        (WIND_THRESHOLD_KT, today_str),
+    ).fetchall()
+
     db.close()
     return {
         "recommendations": recommendations,
@@ -132,6 +168,12 @@ def dashboard():
         "weather_forecast": [dict(r) for r in weather_forecast],
         "rain_history": [dict(r) for r in rain_history],
         "rain_totals": {"last_7_days": rain_7d, "last_30_days": rain_30d},
+        "wind": {
+            "threshold_kt": WIND_THRESHOLD_KT,
+            "windy_days_30d": windy_days_30d,
+            "history": [dict(r) for r in wind_history],
+            "forecast": [dict(r) for r in wind_forecast],
+        },
         "open_requests": open_count,
         "overdue_responses": overdue_responses,
     }

@@ -19,6 +19,8 @@ async def fetch_weather():
         "latitude": LATITUDE,
         "longitude": LONGITUDE,
         "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum",
+        "hourly": "wind_speed_10m",
+        "wind_speed_unit": "kn",
         "timezone": "auto",
         "past_days": WEATHER_PAST_DAYS,
         "forecast_days": WEATHER_FORECAST_DAYS,
@@ -32,6 +34,9 @@ async def fetch_weather():
     temp_max = daily.get("temperature_2m_max", [])
     temp_min = daily.get("temperature_2m_min", [])
     precip = daily.get("precipitation_sum", [])
+    hourly = data.get("hourly", {})
+    hourly_times = hourly.get("time", [])
+    hourly_wind = hourly.get("wind_speed_10m", [])
 
     today = date.today().isoformat()
     # forecast rain = sum of precipitation for days after today
@@ -52,6 +57,17 @@ async def fetch_weather():
                 precip[i] if i < len(precip) else None,
                 forecast_rain if d == today else None,
                 json.dumps(data),
+            ),
+        )
+    for i, ts in enumerate(hourly_times):
+        conn.execute(
+            """INSERT OR REPLACE INTO wind_hourly (ts, date, wind_speed_kt, raw_json)
+               VALUES (?, ?, ?, ?)""",
+            (
+                ts,
+                ts[:10],
+                hourly_wind[i] if i < len(hourly_wind) else None,
+                json.dumps({"timezone": data.get("timezone"), "source": "open-meteo"}),
             ),
         )
     conn.commit()

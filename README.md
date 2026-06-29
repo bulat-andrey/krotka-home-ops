@@ -33,3 +33,4 @@ https://home.46.225.65.120.sslip.io
 | `LONGITUDE` | `18.513418262277867` | Weather lookup longitude |
 | `WEATHER_PAST_DAYS` | `30` | Number of past weather days to keep refreshing |
 | `WEATHER_FORECAST_DAYS` | `5` | Number of forecast days to fetch |
+| `WIND_THRESHOLD_KT` | `14` | Wind threshold for kite-day dashboard summaries |

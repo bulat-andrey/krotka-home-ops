@@ -76,6 +76,13 @@ def init_db():
             raw_json TEXT
         );
 
+        CREATE TABLE IF NOT EXISTS wind_hourly (
+            ts TEXT PRIMARY KEY,
+            date TEXT NOT NULL,
+            wind_speed_kt REAL,
+            raw_json TEXT
+        );
+
         CREATE TABLE IF NOT EXISTS recommendations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             zone_id INTEGER NOT NULL REFERENCES zones(id),
@@ -150,6 +157,7 @@ def init_db():
     conn.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_zones_code ON zones(code) WHERE code IS NOT NULL AND code != ''"
     )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_wind_hourly_date ON wind_hourly(date)")
 
     # Seed zones
     zones = [
