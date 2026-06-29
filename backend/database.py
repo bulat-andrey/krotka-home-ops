@@ -1,5 +1,5 @@
-import sqlite3
 import os
+import sqlite3
 
 DB_PATH = os.environ.get("DB_PATH", "/data/krotka.db")
 
@@ -96,6 +96,16 @@ def init_db():
             description TEXT,
             zone_id INTEGER REFERENCES zones(id),
             contractor_id INTEGER REFERENCES contractors(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            display_name TEXT,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'member',
+            active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
     """)
 

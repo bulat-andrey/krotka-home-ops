@@ -8,6 +8,7 @@ services:
       - ./data:/data
       - ./frontend:/app/static
     environment:
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       AUTH_PASSWORD: ${AUTH_PASSWORD:?Set AUTH_PASSWORD in .env before starting Home Ops}
       DB_PATH: ${DB_PATH:-/data/krotka.db}
       LATITUDE: ${LATITUDE:-52.2297}

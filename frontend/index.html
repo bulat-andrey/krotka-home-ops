@@ -43,9 +43,10 @@
 <div id="login-screen" class="login-wrap">
     <div class="login-box">
         <h1>Krotka Home Ops</h1>
+        <input type="text" id="login-user" placeholder="Пользователь" value="admin" autocomplete="username">
         <input type="password" id="login-pass" placeholder="Пароль">
         <button onclick="doLogin()" style="width:100%;margin-top:8px;">Войти</button>
-        <p id="login-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;">Неверный пароль</p>
+        <p id="login-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;">Неверный логин или пароль</p>
     </div>
 </div>
 
@@ -58,13 +59,16 @@
         <button onclick="showTab('requests')" id="tab-requests"><span>&#128203;</span>Заявки</button>
         <button onclick="showTab('emails')" id="tab-emails"><span>&#128231;</span>Почта</button>
         <button onclick="showTab('events')" id="tab-events"><span>&#128218;</span>Журнал</button>
+        <button onclick="showTab('users')" id="tab-users" class="hidden"><span>&#128101;</span>Люди</button>
     </nav>
 </div>
 
 <script>
+let USERNAME = 'admin';
 let PASSWORD = '';
+let CURRENT_USER = null;
 
-function basicAuth() { return 'Basic ' + btoa('user:' + PASSWORD); }
+function basicAuth() { return 'Basic ' + btoa(USERNAME + ':' + PASSWORD); }
 function authHeaders() { return {'Authorization': basicAuth(), 'Content-Type': 'application/json'}; }
 function authHeadersNoBody() { return {'Authorization': basicAuth()}; }
 
@@ -72,18 +76,23 @@ async function api(path, opts = {}) {
     const isForm = opts.body instanceof FormData;
     const headers = isForm ? authHeadersNoBody() : authHeaders();
     const r = await fetch(path, {...opts, headers: {...headers, ...(opts.headers || {})}});
-    if (r.status === 401) { sessionStorage.removeItem('password'); location.reload(); }
+    if (r.status === 401) { sessionStorage.removeItem('username'); sessionStorage.removeItem('password'); location.reload(); }
     return r.json();
 }
 
 async function doLogin() {
+    USERNAME = document.getElementById('login-user').value || 'admin';
     PASSWORD = document.getElementById('login-pass').value;
     try {
-        const r = await fetch('/api/dashboard', {headers: {'Authorization': basicAuth()}});
+        const r = await fetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username: USERNAME, password: PASSWORD})});
         if (r.ok) {
+            const data = await r.json();
+            CURRENT_USER = data.user;
+            sessionStorage.setItem('username', USERNAME);
             sessionStorage.setItem('password', PASSWORD);
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
+            updateUserNav();
             showTab('dashboard');
         } else {
             document.getElementById('login-error').classList.remove('hidden');
@@ -91,13 +100,25 @@ async function doLogin() {
     } catch(e) { document.getElementById('login-error').classList.remove('hidden'); }
 }
 
-function init() {
+async function init() {
+    USERNAME = sessionStorage.getItem('username') || 'admin';
     PASSWORD = sessionStorage.getItem('password');
     if (PASSWORD) {
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('main-app').classList.remove('hidden');
-        showTab('dashboard');
+        try {
+            CURRENT_USER = await api('/api/users/me');
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            updateUserNav();
+            showTab('dashboard');
+        } catch(e) {
+            sessionStorage.removeItem('username');
+            sessionStorage.removeItem('password');
+        }
     }
+}
+
+function updateUserNav() {
+    document.getElementById('tab-users').classList.toggle('hidden', !CURRENT_USER || CURRENT_USER.role !== 'admin');
 }
 
 let currentTab = '';
@@ -105,7 +126,7 @@ function showTab(tab) {
     currentTab = tab;
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
-    ({dashboard: renderDashboard, watering: renderWatering, mowing: renderMowing, requests: renderRequests, emails: renderEmails, events: renderEvents})[tab]();
+    ({dashboard: renderDashboard, watering: renderWatering, mowing: renderMowing, requests: renderRequests, emails: renderEmails, events: renderEvents, users: renderUsers})[tab]();
 }
 
 // === DASHBOARD ===
@@ -285,6 +306,44 @@ async function renderEvents() {
     });
     h += '</div>';
     document.getElementById('app').innerHTML = h;
+}
+
+// === USERS ===
+async function renderUsers() {
+    const list = await api('/api/users');
+    let h = '<h2>Люди</h2><div class="card"><h3>Новый пользователь</h3>';
+    h += '<div class="form-group"><label>Логин</label><input id="u-username" autocomplete="off"></div>';
+    h += '<div class="form-group"><label>Имя</label><input id="u-display" autocomplete="off"></div>';
+    h += '<div class="form-group"><label>Пароль</label><input type="password" id="u-password" autocomplete="new-password"></div>';
+    h += '<div class="form-group"><label>Роль</label><select id="u-role"><option value="member">Участник</option><option value="admin">Админ</option></select></div>';
+    h += '<button onclick="submitUser()">Создать</button><p id="u-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p></div>';
+    h += '<div class="card"><h3>Список</h3>';
+    list.forEach(u => {
+        const role = u.role === 'admin' ? 'Админ' : 'Участник';
+        const cls = u.role === 'admin' ? 'badge-blue' : 'badge-gray';
+        h += '<div class="list-item"><b>' + u.username + '</b> <span class="badge ' + cls + '">' + role + '</span><br><small>' + (u.display_name || '') + (u.active ? '' : ' | отключен') + '</small></div>';
+    });
+    h += '</div>';
+    document.getElementById('app').innerHTML = h;
+}
+
+async function submitUser() {
+    const err = document.getElementById('u-error');
+    err.classList.add('hidden');
+    const data = {
+        username: document.getElementById('u-username').value.trim(),
+        display_name: document.getElementById('u-display').value.trim(),
+        password: document.getElementById('u-password').value,
+        role: document.getElementById('u-role').value
+    };
+    const r = await fetch('/api/users', {method:'POST', headers: authHeaders(), body: JSON.stringify(data)});
+    if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        err.textContent = body.detail || 'Не удалось создать пользователя';
+        err.classList.remove('hidden');
+        return;
+    }
+    renderUsers();
 }
 
 init();

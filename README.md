@@ -12,6 +12,7 @@ docker compose up -d --build
 By default the app listens on `http://localhost:8010`, leaving `8000` free for other local services. It binds to `127.0.0.1`; set `HOST_BIND=0.0.0.0` only if you intentionally want direct network access.
 
 Set `AUTH_PASSWORD` in `.env` before exposing the app beyond local development.
+The first admin account is seeded as `admin` using `AUTH_PASSWORD`.
 
 On the current host, Caddy publishes Home Ops at:
 
@@ -25,6 +26,7 @@ https://home.46.225.65.120.sslip.io
 | --- | --- | --- |
 | `HOST_PORT` | `8010` | Host port published by Docker Compose |
 | `HOST_BIND` | `127.0.0.1` | Host interface published by Docker Compose |
+| `ADMIN_USERNAME` | `admin` | Username for the first seeded admin account |
 | `AUTH_PASSWORD` | required | Password used by the web app |
 | `DB_PATH` | `/data/krotka.db` | SQLite database path inside the container |
 | `LATITUDE` | `52.2297` | Weather lookup latitude |
