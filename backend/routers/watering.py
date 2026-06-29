@@ -1,7 +1,8 @@
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from auth import verify_auth
 from database import get_db
@@ -9,12 +10,85 @@ from database import get_db
 router = APIRouter(dependencies=[Depends(verify_auth)])
 
 
+class ZonePayload(BaseModel):
+    code: str | None = Field(default=None, max_length=20)
+    name: str = Field(min_length=1, max_length=120)
+    type: str | None = Field(default=None, max_length=40)
+    sun_exposure: str | None = Field(default=None, max_length=40)
+    notes: str | None = Field(default=None, max_length=500)
+    active: bool = True
+
+
 @router.get("/api/zones")
 def list_zones():
     conn = get_db()
-    rows = conn.execute("SELECT id, name, type, sun_exposure FROM zones").fetchall()
+    rows = conn.execute(
+        """SELECT id, code, name, type, sun_exposure, notes, active
+           FROM zones WHERE active = 1
+           ORDER BY COALESCE(code, name), name"""
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+@router.post("/api/zones", status_code=201)
+def create_zone(zone: ZonePayload):
+    conn = get_db()
+    code = zone.code.strip().upper() if zone.code else None
+    try:
+        cur = conn.execute(
+            """INSERT INTO zones (code, name, type, sun_exposure, notes, active)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                code,
+                zone.name.strip(),
+                zone.type,
+                zone.sun_exposure,
+                zone.notes,
+                1 if zone.active else 0,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM zones WHERE id = ?", (cur.lastrowid,)).fetchone()
+        return dict(row)
+    except Exception as exc:
+        if "UNIQUE" in str(exc).upper():
+            raise HTTPException(status_code=409, detail="Zone code or name already exists") from exc
+        raise
+    finally:
+        conn.close()
+
+
+@router.put("/api/zones/{zone_id}")
+def update_zone(zone_id: int, zone: ZonePayload):
+    conn = get_db()
+    code = zone.code.strip().upper() if zone.code else None
+    try:
+        conn.execute(
+            """UPDATE zones
+               SET code = ?, name = ?, type = ?, sun_exposure = ?, notes = ?, active = ?
+               WHERE id = ?""",
+            (
+                code,
+                zone.name.strip(),
+                zone.type,
+                zone.sun_exposure,
+                zone.notes,
+                1 if zone.active else 0,
+                zone_id,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM zones WHERE id = ?", (zone_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Zone not found")
+        return dict(row)
+    except Exception as exc:
+        if "UNIQUE" in str(exc).upper():
+            raise HTTPException(status_code=409, detail="Zone code or name already exists") from exc
+        raise
+    finally:
+        conn.close()
 
 
 @router.post("/api/watering")
@@ -52,11 +126,13 @@ def watering_history(zone_id: Optional[int] = Query(None)):
 def last_watering_per_zone():
     conn = get_db()
     rows = conn.execute("""
-        SELECT z.id as zone_id, z.name, w.date, w.duration_min, w.method
+        SELECT z.id as zone_id, z.code, z.name, w.date, w.duration_min, w.method
         FROM zones z
         LEFT JOIN watering_events w ON w.id = (
             SELECT id FROM watering_events WHERE zone_id = z.id ORDER BY date DESC LIMIT 1
         )
+        WHERE z.active = 1
+        ORDER BY COALESCE(z.code, z.name), z.name
     """).fetchall()
     conn.close()
     today = date.today()

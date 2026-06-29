@@ -1,5 +1,7 @@
 .DS_Store
 .env
+/*.jpg
+/*.jpeg
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -10,4 +12,3 @@ venv/
 data/*.db
 data/*.db-*
 data/uploads/
-

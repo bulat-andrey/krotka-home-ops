@@ -12,15 +12,49 @@ def get_db() -> sqlite3.Connection:
     return conn
 
 
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str):
+    columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in columns:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
+def _rebuild_zones_without_name_unique(conn: sqlite3.Connection):
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'zones'"
+    ).fetchone()
+    if not row or "name TEXT NOT NULL UNIQUE" not in row["sql"]:
+        return
+    conn.executescript("""
+        PRAGMA foreign_keys=OFF;
+        CREATE TABLE zones_rebuild (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT,
+            name TEXT NOT NULL,
+            type TEXT,
+            sun_exposure TEXT,
+            notes TEXT,
+            active INTEGER NOT NULL DEFAULT 1
+        );
+        INSERT INTO zones_rebuild (id, code, name, type, sun_exposure, notes, active)
+        SELECT id, code, name, type, sun_exposure, notes, active FROM zones;
+        DROP TABLE zones;
+        ALTER TABLE zones_rebuild RENAME TO zones;
+        PRAGMA foreign_keys=ON;
+    """)
+
+
 def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = get_db()
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS zones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE,
+            code TEXT,
+            name TEXT NOT NULL,
             type TEXT,
-            sun_exposure TEXT
+            sun_exposure TEXT,
+            notes TEXT,
+            active INTEGER NOT NULL DEFAULT 1
         );
 
         CREATE TABLE IF NOT EXISTS watering_events (
@@ -108,6 +142,13 @@ def init_db():
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
     """)
+    _ensure_column(conn, "zones", "code", "TEXT")
+    _ensure_column(conn, "zones", "notes", "TEXT")
+    _ensure_column(conn, "zones", "active", "INTEGER NOT NULL DEFAULT 1")
+    _rebuild_zones_without_name_unique(conn)
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_zones_code ON zones(code) WHERE code IS NOT NULL AND code != ''"
+    )
 
     # Seed zones
     zones = [
@@ -118,10 +159,15 @@ def init_db():
         ("солнце", "sun_area", "sun"),
     ]
     for name, type_, sun in zones:
-        conn.execute(
-            "INSERT OR IGNORE INTO zones (name, type, sun_exposure) VALUES (?, ?, ?)",
-            (name, type_, sun),
-        )
+        existing = conn.execute(
+            "SELECT id FROM zones WHERE name = ? AND type = ? LIMIT 1",
+            (name, type_),
+        ).fetchone()
+        if not existing:
+            conn.execute(
+                "INSERT INTO zones (name, type, sun_exposure) VALUES (?, ?, ?)",
+                (name, type_, sun),
+            )
 
     # Seed contractors
     for name in ("Dawid", "Mateusz", "Bartek", "Gestia"):

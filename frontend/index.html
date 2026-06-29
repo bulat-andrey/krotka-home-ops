@@ -25,8 +25,8 @@
         .alert{background:#fff3e0;border-left:4px solid #ff9800;padding:10px;margin-bottom:10px;border-radius:4px;font-size:14px}
         .alert-red{background:#fbe9e7;border-left-color:#f44336}
         #app{flex:1;padding:12px;padding-bottom:70px}
-        nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:space-around;max-width:480px;margin:0 auto;z-index:100}
-        nav button{background:none;color:#666;font-size:11px;padding:8px 4px;border-radius:0;min-height:50px;flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+        nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:flex-start;max-width:480px;margin:0 auto;z-index:100;overflow-x:auto}
+        nav button{background:none;color:#666;font-size:11px;padding:8px 4px;border-radius:0;min-height:50px;flex:0 0 60px;display:flex;flex-direction:column;align-items:center;gap:2px}
         nav button.active{color:#2196F3}
         nav button span{font-size:20px}
         .list-item{padding:10px 0;border-bottom:1px solid #eee;font-size:14px}
@@ -54,6 +54,7 @@
     <div id="app"></div>
     <nav>
         <button onclick="showTab('dashboard')" id="tab-dashboard"><span>&#127968;</span>Главная</button>
+        <button onclick="showTab('zones')" id="tab-zones"><span>&#128205;</span>Зоны</button>
         <button onclick="showTab('watering')" id="tab-watering"><span>&#128167;</span>Полив</button>
         <button onclick="showTab('mowing')" id="tab-mowing"><span>&#127807;</span>Покос</button>
         <button onclick="showTab('requests')" id="tab-requests"><span>&#128203;</span>Заявки</button>
@@ -68,6 +69,7 @@ let USERNAME = 'admin';
 let PASSWORD = '';
 let CURRENT_USER = null;
 
+function zoneLabel(z) { return (z.code ? z.code + ' - ' : '') + z.name; }
 function basicAuth() { return 'Basic ' + btoa(USERNAME + ':' + PASSWORD); }
 function authHeaders() { return {'Authorization': basicAuth(), 'Content-Type': 'application/json'}; }
 function authHeadersNoBody() { return {'Authorization': basicAuth()}; }
@@ -126,7 +128,7 @@ function showTab(tab) {
     currentTab = tab;
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
-    ({dashboard: renderDashboard, watering: renderWatering, mowing: renderMowing, requests: renderRequests, emails: renderEmails, events: renderEvents, users: renderUsers})[tab]();
+    ({dashboard: renderDashboard, zones: renderZones, watering: renderWatering, mowing: renderMowing, requests: renderRequests, emails: renderEmails, events: renderEvents, users: renderUsers})[tab]();
 }
 
 // === DASHBOARD ===
@@ -137,7 +139,7 @@ async function renderDashboard() {
         h += '<div class="card"><h3>Рекомендации</h3>';
         d.recommendations.forEach(r => {
             const c = r.status === 'Полить сегодня' ? 'badge-red' : r.status === 'Можно подождать' ? 'badge-yellow' : 'badge-green';
-            h += '<div class="list-item"><b>' + r.zone_name + '</b>: <span class="badge ' + c + '">' + r.status + '</span><br><small>' + (r.reason||'') + '</small></div>';
+            h += '<div class="list-item"><b>' + zoneLabel({code:r.zone_code, name:r.zone_name}) + '</b>: <span class="badge ' + c + '">' + r.status + '</span><br><small>' + (r.reason||'') + '</small></div>';
         });
         h += '</div>';
     }
@@ -145,7 +147,7 @@ async function renderDashboard() {
         h += '<div class="card"><h3>Последний полив</h3>';
         d.last_watering.forEach(w => {
             const ds = w.days_since !== null ? w.days_since + ' дн. назад' : 'нет данных';
-            h += '<div class="list-item">' + w.zone_name + ': ' + ds + '</div>';
+            h += '<div class="list-item">' + zoneLabel({code:w.zone_code, name:w.zone_name}) + ': ' + ds + '</div>';
         });
         h += '</div>';
     }
@@ -162,14 +164,52 @@ async function renderDashboard() {
 
 // === WATERING ===
 let zones = [];
+async function renderZones() {
+    zones = await api('/api/zones');
+    let h = '<h2>Зоны</h2><div class="card"><h3>Новая зона</h3>';
+    h += '<div class="form-group"><label>Код</label><input id="z-code" placeholder="W1"></div>';
+    h += '<div class="form-group"><label>Название</label><input id="z-name" placeholder="Газон у въезда"></div>';
+    h += '<div class="form-group"><label>Тип</label><select id="z-type"><option value="lawn">Газон</option><option value="bushes">Кустарники</option><option value="new_plants">Новые посадки</option><option value="tree">Дерево</option><option value="hedge">Живая изгородь</option><option value="other">Другое</option></select></div>';
+    h += '<div class="form-group"><label>Солнце</label><select id="z-sun"><option value="sun">Солнце</option><option value="partial">Полутень</option><option value="shade">Тень</option><option value="mixed">Смешано</option></select></div>';
+    h += '<div class="form-group"><label>Заметки</label><input id="z-notes" placeholder="туя, самшит, склон, рядом с парковкой"></div>';
+    h += '<button onclick="submitZone()">Создать</button><p id="z-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p></div>';
+    h += '<div class="card"><h3>Список</h3>';
+    zones.forEach(z => {
+        h += '<div class="list-item"><b>' + zoneLabel(z) + '</b><br><small>' + (z.type || '') + (z.sun_exposure ? ' | ' + z.sun_exposure : '') + (z.notes ? ' | ' + z.notes : '') + '</small></div>';
+    });
+    h += '</div>';
+    document.getElementById('app').innerHTML = h;
+}
+
+async function submitZone() {
+    const err = document.getElementById('z-error');
+    err.classList.add('hidden');
+    const data = {
+        code: document.getElementById('z-code').value.trim(),
+        name: document.getElementById('z-name').value.trim(),
+        type: document.getElementById('z-type').value,
+        sun_exposure: document.getElementById('z-sun').value,
+        notes: document.getElementById('z-notes').value.trim()
+    };
+    const r = await fetch('/api/zones', {method:'POST', headers: authHeaders(), body: JSON.stringify(data)});
+    if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        err.textContent = body.detail || 'Не удалось создать зону';
+        err.classList.remove('hidden');
+        return;
+    }
+    zones = [];
+    renderZones();
+}
+
 async function renderWatering() {
     if (!zones.length) zones = await api('/api/zones');
     const history = await api('/api/watering');
     const last = await api('/api/watering/last');
     let h = '<h2>Полив</h2><div class="card"><h3>Состояние</h3>';
-    last.forEach(z => { h += '<div class="list-item">' + z.name + ': ' + (z.days_since !== null ? z.days_since + ' дн. назад' : 'нет') + '</div>'; });
+    last.forEach(z => { h += '<div class="list-item">' + zoneLabel(z) + ': ' + (z.days_since !== null ? z.days_since + ' дн. назад' : 'нет') + '</div>'; });
     h += '</div><div class="card"><h3>Записать полив</h3>';
-    h += '<div class="form-group"><label>Зона</label><select id="w-zone">' + zones.map(z => '<option value="' + z.id + '">' + z.name + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>Зона</label><select id="w-zone">' + zones.map(z => '<option value="' + z.id + '">' + zoneLabel(z) + '</option>').join('') + '</select></div>';
     h += '<div class="form-group"><label>Длительность (мин)</label><input type="number" id="w-dur" value="15"></div>';
     h += '<div class="form-group"><label>Метод</label><select id="w-method"><option value="дождеватель">Дождеватель</option><option value="пистолет">Пистолет</option></select></div>';
     h += '<div class="form-group"><label>Заметки</label><input id="w-notes"></div>';
@@ -177,7 +217,7 @@ async function renderWatering() {
     h += '<div class="card"><h3>История</h3>';
     history.slice(0, 20).forEach(e => {
         const zn = zones.find(z => z.id === e.zone_id);
-        h += '<div class="list-item">' + e.date + ' - ' + (zn ? zn.name : '?') + ' - ' + (e.duration_min||'?') + ' мин (' + (e.method||'') + ')</div>';
+        h += '<div class="list-item">' + e.date + ' - ' + (zn ? zoneLabel(zn) : '?') + ' - ' + (e.duration_min||'?') + ' мин (' + (e.method||'') + ')</div>';
     });
     h += '</div>';
     document.getElementById('app').innerHTML = h;

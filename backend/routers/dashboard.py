@@ -16,7 +16,7 @@ def dashboard():
 
     # Recommendations: today's per zone
     recs = db.execute(
-        """SELECT r.status, r.reason, z.name as zone_name
+        """SELECT r.status, r.reason, z.code as zone_code, z.name as zone_name
            FROM recommendations r JOIN zones z ON r.zone_id = z.id
            WHERE r.date = ?""",
         (today_str,),
@@ -25,15 +25,17 @@ def dashboard():
 
     # Last watering per zone with days_since
     watering_rows = db.execute("""
-        SELECT z.id, z.name, w.date
+        SELECT z.id, z.code, z.name, w.date
         FROM zones z
         LEFT JOIN watering_events w ON w.id = (
             SELECT id FROM watering_events WHERE zone_id = z.id ORDER BY date DESC LIMIT 1
         )
+        WHERE z.active = 1
+        ORDER BY COALESCE(z.code, z.name), z.name
     """).fetchall()
     last_watering = []
     for r in watering_rows:
-        d = {"zone_id": r["id"], "zone_name": r["name"], "date": r["date"]}
+        d = {"zone_id": r["id"], "zone_code": r["code"], "zone_name": r["name"], "date": r["date"]}
         if r["date"]:
             d["days_since"] = (today - date.fromisoformat(r["date"])).days
         else:
