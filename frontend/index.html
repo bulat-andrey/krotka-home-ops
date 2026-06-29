@@ -320,6 +320,8 @@ async function deactivateZone(id) {
     renderZones();
 }
 
+let editingWateringId = null;
+
 async function renderWatering() {
     if (!zones.length) zones = await api('/api/zones');
     const history = await api('/api/watering');
@@ -328,20 +330,56 @@ async function renderWatering() {
     last.forEach(z => { h += '<div class="list-item">' + zoneLabel(z) + ': ' + (z.days_since !== null ? z.days_since + ' дн. назад' : 'нет') + '</div>'; });
     h += '</div><div class="card"><h3>Записать полив</h3>';
     h += '<div class="form-group"><label>Зона</label><select id="w-zone">' + zones.map(z => '<option value="' + z.id + '">' + zoneLabel(z) + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>Дата</label><input type="date" id="w-date" value="' + new Date().toISOString().slice(0,10) + '"></div>';
     h += '<div class="form-group"><label>Длительность (мин)</label><input type="number" id="w-dur" value="15"></div>';
     h += '<div class="form-group"><label>Метод</label><select id="w-method"><option value="дождеватель">Дождеватель</option><option value="пистолет">Пистолет</option></select></div>';
     h += '<div class="form-group"><label>Заметки</label><input id="w-notes"></div>';
     h += '<button onclick="submitWatering()">Сохранить</button></div>';
     h += '<div class="card"><h3>История</h3>';
+    const methodOptions = ['дождеватель', 'пистолет'];
     history.slice(0, 20).forEach(e => {
         const zn = zones.find(z => z.id === e.zone_id);
-        h += '<div class="list-item">' + e.date + ' - ' + (zn ? zoneLabel(zn) : '?') + ' - ' + (e.duration_min||'?') + ' мин (' + (e.method||'') + ')</div>';
+        h += '<div class="list-item">' + e.date + ' - ' + (zn ? zoneLabel(zn) : '?') + ' - ' + (e.duration_min||'?') + ' мин (' + (e.method||'') + ')';
+        h += ' <button style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="toggleWateringEditor(' + e.id + ')">&#9998;</button></div>';
+        if (editingWateringId === e.id) {
+            h += '<div style="margin-top:10px;">';
+            h += '<div class="form-group"><label>Зона</label><select id="ew-zone">' + zones.map(z => '<option value="' + z.id + '"' + (e.zone_id === z.id ? ' selected' : '') + '>' + zoneLabel(z) + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>Дата</label><input type="date" id="ew-date" value="' + e.date + '"></div>';
+            h += '<div class="form-group"><label>Длительность (мин)</label><input type="number" id="ew-dur" value="' + (e.duration_min||'') + '"></div>';
+            h += '<div class="form-group"><label>Метод</label><select id="ew-method">' + methodOptions.map(m => '<option value="' + m + '"' + (e.method === m ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>Заметки</label><input id="ew-notes" value="' + esc(e.notes||'') + '"></div>';
+            h += '<button onclick="saveWatering(' + e.id + ')" style="margin-right:8px;">Сохранить</button>';
+            h += '<button onclick="deleteWatering(' + e.id + ')" style="background:#c62828;">Удалить</button>';
+            h += '</div>';
+        }
     });
     h += '</div>';
     document.getElementById('app').innerHTML = h;
 }
 async function submitWatering() {
-    await api('/api/watering', {method:'POST', body: JSON.stringify({zone_id:+document.getElementById('w-zone').value, duration_minutes:+document.getElementById('w-dur').value, method:document.getElementById('w-method').value, notes:document.getElementById('w-notes').value})});
+    await api('/api/watering', {method:'POST', body: JSON.stringify({zone_id:+document.getElementById('w-zone').value, date:document.getElementById('w-date').value, duration_minutes:+document.getElementById('w-dur').value, method:document.getElementById('w-method').value, notes:document.getElementById('w-notes').value})});
+    renderWatering();
+}
+function toggleWateringEditor(id) {
+    editingWateringId = editingWateringId === id ? null : id;
+    renderWatering();
+}
+async function saveWatering(id) {
+    const data = {
+        zone_id: +document.getElementById('ew-zone').value,
+        date: document.getElementById('ew-date').value,
+        duration_min: document.getElementById('ew-dur').value ? +document.getElementById('ew-dur').value : null,
+        method: document.getElementById('ew-method').value,
+        notes: document.getElementById('ew-notes').value || null
+    };
+    await api('/api/watering/' + id, {method:'PUT', body: JSON.stringify(data)});
+    editingWateringId = null;
+    renderWatering();
+}
+async function deleteWatering(id) {
+    if (!confirm('Удалить запись полива?')) return;
+    await api('/api/watering/' + id, {method:'DELETE'});
+    editingWateringId = null;
     renderWatering();
 }
 

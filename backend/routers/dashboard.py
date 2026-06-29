@@ -84,13 +84,13 @@ def dashboard():
 
     # Open requests count
     open_count = db.execute(
-        "SELECT COUNT(*) as cnt FROM requests WHERE status NOT IN ('closed', 'answered')"
+        "SELECT COUNT(*) as cnt FROM requests WHERE status NOT IN ('closed', 'answered') AND deleted_at IS NULL"
     ).fetchone()["cnt"]
 
     # Overdue responses
     overdue = db.execute(
         """SELECT title FROM requests
-           WHERE due_at < ? AND status NOT IN ('closed', 'answered')
+           WHERE due_at < ? AND status NOT IN ('closed', 'answered') AND deleted_at IS NULL
            ORDER BY due_at""",
         (today_str,),
     ).fetchall()
