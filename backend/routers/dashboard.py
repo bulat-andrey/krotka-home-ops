@@ -18,7 +18,7 @@ def dashboard():
     recs = db.execute(
         """SELECT r.status, r.reason, z.code as zone_code, z.name as zone_name
            FROM recommendations r JOIN zones z ON r.zone_id = z.id
-           WHERE r.date = ?""",
+           WHERE r.date = ? AND z.active = 1""",
         (today_str,),
     ).fetchall()
     recommendations = [dict(r) for r in recs]

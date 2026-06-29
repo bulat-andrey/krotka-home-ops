@@ -91,6 +91,19 @@ def update_zone(zone_id: int, zone: ZonePayload):
         conn.close()
 
 
+@router.delete("/api/zones/{zone_id}")
+def deactivate_zone(zone_id: int):
+    conn = get_db()
+    try:
+        cur = conn.execute("UPDATE zones SET active = 0 WHERE id = ?", (zone_id,))
+        conn.commit()
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Zone not found")
+        return {"ok": True}
+    finally:
+        conn.close()
+
+
 @router.post("/api/watering")
 def log_watering(event: dict):
     conn = get_db()

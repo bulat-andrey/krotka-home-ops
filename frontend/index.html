@@ -175,7 +175,7 @@ async function renderZones() {
     h += '<button onclick="submitZone()">Создать</button><p id="z-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p></div>';
     h += '<div class="card"><h3>Список</h3>';
     zones.forEach(z => {
-        h += '<div class="list-item"><b>' + zoneLabel(z) + '</b><br><small>' + (z.type || '') + (z.sun_exposure ? ' | ' + z.sun_exposure : '') + (z.notes ? ' | ' + z.notes : '') + '</small></div>';
+        h += '<div class="list-item"><b>' + zoneLabel(z) + '</b><br><small>' + (z.type || '') + (z.sun_exposure ? ' | ' + z.sun_exposure : '') + (z.notes ? ' | ' + z.notes : '') + '</small><br><button style="padding:4px 8px;font-size:12px;min-height:auto;margin-top:6px;background:#777;" onclick="deactivateZone(' + z.id + ')">Отключить</button></div>';
     });
     h += '</div>';
     document.getElementById('app').innerHTML = h;
@@ -198,6 +198,13 @@ async function submitZone() {
         err.classList.remove('hidden');
         return;
     }
+    zones = [];
+    renderZones();
+}
+
+async function deactivateZone(id) {
+    if (!confirm('Отключить эту зону? История сохранится, но зона исчезнет из активных списков.')) return;
+    await api('/api/zones/' + id, {method:'DELETE'});
     zones = [];
     renderZones();
 }

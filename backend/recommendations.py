@@ -30,7 +30,7 @@ def generate_recommendations():
     temp_max = weather["temp_max"] if weather else None
     forecast_rain = weather["forecast_rain_mm"] if weather else 0
 
-    zones = conn.execute("SELECT id, name, type FROM zones").fetchall()
+    zones = conn.execute("SELECT id, name, type FROM zones WHERE active = 1").fetchall()
 
     # Clear today's old recommendations
     conn.execute("DELETE FROM recommendations WHERE date = ?", (today_str,))
