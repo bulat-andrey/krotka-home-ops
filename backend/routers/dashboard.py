@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends
 
@@ -6,6 +6,9 @@ from auth import verify_auth
 from database import get_db
 
 router = APIRouter(dependencies=[Depends(verify_auth)])
+
+MOWING_INTERVAL_DAYS = 21
+MOWING_REQUEST_LEAD_DAYS = 4
 
 
 @router.get("/api/dashboard")
@@ -42,16 +45,40 @@ def dashboard():
             d["days_since"] = None
         last_watering.append(d)
 
-    # Last mowing + overdue flag (>10 days)
+    # Last mowing + next planned mowing by contract cycle.
     mow = db.execute(
         "SELECT date FROM mowing_events ORDER BY date DESC LIMIT 1"
     ).fetchone()
     if mow:
         last_mow_date = datetime.strptime(mow["date"], "%Y-%m-%d").date()
         days_since_mow = (today - last_mow_date).days
-        last_mowing = {"date": mow["date"], "days_since": days_since_mow, "overdue": days_since_mow > 10}
+        next_mow_date = last_mow_date + timedelta(days=MOWING_INTERVAL_DAYS)
+        request_from_date = next_mow_date - timedelta(days=MOWING_REQUEST_LEAD_DAYS)
+        last_mowing = {
+            "date": mow["date"],
+            "days_since": days_since_mow,
+            "next_date": next_mow_date.isoformat(),
+            "days_until_next": (next_mow_date - today).days,
+            "request_from": request_from_date.isoformat(),
+            "days_until_request": (request_from_date - today).days,
+            "request_due": today >= request_from_date,
+            "overdue": today > next_mow_date,
+            "interval_days": MOWING_INTERVAL_DAYS,
+            "request_lead_days": MOWING_REQUEST_LEAD_DAYS,
+        }
     else:
-        last_mowing = {"date": None, "days_since": None, "overdue": True}
+        last_mowing = {
+            "date": None,
+            "days_since": None,
+            "next_date": None,
+            "days_until_next": None,
+            "request_from": None,
+            "days_until_request": None,
+            "request_due": True,
+            "overdue": True,
+            "interval_days": MOWING_INTERVAL_DAYS,
+            "request_lead_days": MOWING_REQUEST_LEAD_DAYS,
+        }
 
     # Open requests count
     open_count = db.execute(

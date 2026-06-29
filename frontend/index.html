@@ -153,8 +153,15 @@ async function renderDashboard() {
     }
     if (d.last_mowing) {
         const m = d.last_mowing;
-        h += '<div class="card"><h3>Покос</h3><div>' + (m.date || 'нет данных') + ' (' + (m.days_since !== null ? m.days_since + ' дн.' : '?') + ')';
-        if (m.overdue) h += ' <span class="badge badge-red">Просрочено!</span>';
+        h += '<div class="card"><h3>Покос</h3><div>Последний: ' + (m.date || 'нет данных') + ' (' + (m.days_since !== null ? m.days_since + ' дн. назад' : '?') + ')</div>';
+        if (m.next_date) {
+            h += '<div class="list-item">Следующий плановый: <b>' + m.next_date + '</b> (' + m.interval_days + ' дн. цикл)</div>';
+            h += '<div class="list-item">Запрос можно отправлять с: <b>' + m.request_from + '</b>';
+            if (m.request_due) h += ' <span class="badge badge-yellow">Пора готовить запрос</span>';
+            else h += ' <span class="badge badge-gray">через ' + m.days_until_request + ' дн.</span>';
+            h += '</div>';
+        }
+        if (m.overdue) h += '<div class="alert alert-red">Покос просрочен</div>';
         h += '</div></div>';
     }
     if (d.open_requests > 0) h += '<div class="alert">Открытых заявок: ' + d.open_requests + '</div>';
