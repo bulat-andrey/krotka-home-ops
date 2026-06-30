@@ -101,7 +101,7 @@ const I18N = {
         sunLabels: {sun:'Солнце', partial:'Полутень', shade:'Тень', mixed:'Смешано'},
         eventLabels: {watering:'Полив', mowing:'Покос', request:'Заявка'},
         directionLabels: {outgoing:'Исходящее', incoming:'Входящее'},
-        dashboard: {recommendations:'Рекомендации', lastWatering:'Последний полив', mowing:'Покос', openRequests:'Открытых заявок', overdue:'Просрочены', inDays:'через', daysAgo:'дн. назад', noData:'нет данных', list:'Список', wind30:'За 30 дней', archive:'Архив', errorCreateZone:'Не удалось создать зону', errorSaveZone:'Не удалось сохранить зону', errorCreateUser:'Не удалось создать пользователя'},
+        dashboard: {recommendations:'Рекомендации', lastWatering:'Последний полив', mowing:'Покос', openRequests:'Открытых заявок', overdue:'Просрочены', inDays:'через', daysAgo:'дн. назад', noData:'нет данных', list:'Список', wind30:'За 30 дней', archive:'Архив', errorCreateZone:'Не удалось создать зону', errorSaveZone:'Не удалось сохранить зону', errorCreateUser:'Не удалось создать пользователя', errorCreateRequest:'Не удалось создать заявку', errorSaveRequest:'Не удалось сохранить заявку'},
         mowing: {last:'Последний', next:'Следующий плановый', requestFrom:'Запрос можно отправлять с', requestReady:'Пора готовить запрос', overdue:'Покос просрочен', cycle:'дн. цикл'},
         weather: {forecastRain:'Прогноз дождя', rainGdynia:'Осадки в Гдыне', last7:'За 7 дней', last30:'за 30 дней', wind:'Ветер', nextDays:'Ближайшие дни', lastDays:'Последние дни'},
         watering: {state:'Состояние', log:'Записать полив', history:'История', zone:'Зона', noData:'нет', deleteQuestion:'Удалить запись полива?'},
@@ -133,7 +133,7 @@ const I18N = {
         sunLabels: {sun:'Słońce', partial:'Półcień', shade:'Cień', mixed:'Mieszane'},
         eventLabels: {watering:'Podlewanie', mowing:'Koszenie', request:'Zgłoszenie'},
         directionLabels: {outgoing:'Wychodząca', incoming:'Przychodząca'},
-        dashboard: {recommendations:'Rekomendacje', lastWatering:'Ostatnie podlewanie', mowing:'Koszenie', openRequests:'Otwarte zgłoszenia', overdue:'Przeterminowane', inDays:'za', daysAgo:'dni temu', noData:'brak danych', list:'Lista', wind30:'Przez 30 dni', archive:'Archiwum', errorCreateZone:'Nie udało się utworzyć strefy', errorSaveZone:'Nie udało się zapisać strefy', errorCreateUser:'Nie udało się utworzyć użytkownika'},
+        dashboard: {recommendations:'Rekomendacje', lastWatering:'Ostatnie podlewanie', mowing:'Koszenie', openRequests:'Otwarte zgłoszenia', overdue:'Przeterminowane', inDays:'za', daysAgo:'dni temu', noData:'brak danych', list:'Lista', wind30:'Przez 30 dni', archive:'Archiwum', errorCreateZone:'Nie udało się utworzyć strefy', errorSaveZone:'Nie udało się zapisać strefy', errorCreateUser:'Nie udało się utworzyć użytkownika', errorCreateRequest:'Nie udało się utworzyć zgłoszenia', errorSaveRequest:'Nie udało się zapisać zgłoszenia'},
         mowing: {last:'Ostatnie', next:'Następne planowane', requestFrom:'Zgłoszenie można wysłać od', requestReady:'Czas przygotować zgłoszenie', overdue:'Koszenie jest po terminie', cycle:'d. cykl'},
         weather: {forecastRain:'Prognoza deszczu', rainGdynia:'Opady w Gdyni', last7:'Ostatnie 7 dni', last30:'ostatnie 30 dni', wind:'Wiatr', nextDays:'Najbliższe dni', lastDays:'Ostatnie dni'},
         watering: {state:'Stan', log:'Zapisz podlewanie', history:'Historia', zone:'Strefa', noData:'brak', deleteQuestion:'Usunąć wpis podlewania?'},
@@ -189,6 +189,12 @@ function eventLabel(v) { return t('eventLabels.' + v) || v || ''; }
 function directionLabel(v) { return t('directionLabels.' + v) || v || ''; }
 function recStatusLabel(v) { return t('recStatus.' + v) || v || ''; }
 function yesNo(v) { return v ? t('yes') : t('no'); }
+function wateringMethodLabel(v) {
+    const map = LANG === 'pl'
+        ? {'дождеватель': 'Zraszacz', 'пистолет': 'Pistolet'}
+        : {'дождеватель': 'Дождеватель', 'пистолет': 'Пистолет'};
+    return map[v] || v || '';
+}
 
 function zoneLabel(z) { return (z.code ? z.code + ' - ' : '') + z.name; }
 function esc(v) {
@@ -457,21 +463,21 @@ async function renderWatering() {
     h += '<div class="form-group"><label>' + t('watering.zone') + '</label><select id="w-zone">' + zones.map(z => '<option value="' + z.id + '">' + zoneLabel(z) + '</option>').join('') + '</select></div>';
     h += '<div class="form-group"><label>' + t('labels.date') + '</label><input type="date" id="w-date" value="' + new Date().toISOString().slice(0,10) + '"></div>';
     h += '<div class="form-group"><label>' + t('labels.duration') + '</label><input type="number" id="w-dur" value="15"></div>';
-    h += '<div class="form-group"><label>' + t('labels.method') + '</label><select id="w-method"><option value="дождеватель">' + (LANG === 'pl' ? 'Zraszacz' : 'Дождеватель') + '</option><option value="пистолет">' + (LANG === 'pl' ? 'Pistolet' : 'Пистолет') + '</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.method') + '</label><select id="w-method"><option value="дождеватель">' + wateringMethodLabel('дождеватель') + '</option><option value="пистолет">' + wateringMethodLabel('пистолет') + '</option></select></div>';
     h += '<div class="form-group"><label>' + t('labels.notes') + '</label><input id="w-notes"></div>';
     h += '<button onclick="submitWatering()">' + t('actions.save') + '</button></div>';
     h += '<div class="card"><h3>' + t('watering.history') + '</h3>';
     const methodOptions = ['дождеватель', 'пистолет'];
     history.slice(0, 20).forEach(e => {
         const zn = zones.find(z => z.id === e.zone_id);
-        h += '<div class="list-item">' + e.date + ' - ' + (zn ? zoneLabel(zn) : '?') + ' - ' + (e.duration_min||'?') + ' ' + (LANG === 'pl' ? 'min' : 'мин') + ' (' + (e.method||'') + ')';
+        h += '<div class="list-item">' + e.date + ' - ' + (zn ? zoneLabel(zn) : '?') + ' - ' + (e.duration_min||'?') + ' ' + (LANG === 'pl' ? 'min' : 'мин') + ' (' + wateringMethodLabel(e.method||'') + ')';
         h += ' <button style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="toggleWateringEditor(' + e.id + ')">&#9998;</button></div>';
         if (editingWateringId === e.id) {
             h += '<div style="margin-top:10px;">';
             h += '<div class="form-group"><label>' + t('watering.zone') + '</label><select id="ew-zone">' + zones.map(z => '<option value="' + z.id + '"' + (e.zone_id === z.id ? ' selected' : '') + '>' + zoneLabel(z) + '</option>').join('') + '</select></div>';
             h += '<div class="form-group"><label>' + t('labels.date') + '</label><input type="date" id="ew-date" value="' + e.date + '"></div>';
             h += '<div class="form-group"><label>' + t('labels.duration') + '</label><input type="number" id="ew-dur" value="' + (e.duration_min||'') + '"></div>';
-            h += '<div class="form-group"><label>' + t('labels.method') + '</label><select id="ew-method">' + methodOptions.map(m => '<option value="' + m + '"' + (e.method === m ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>' + t('labels.method') + '</label><select id="ew-method">' + methodOptions.map(m => '<option value="' + m + '"' + (e.method === m ? ' selected' : '') + '>' + wateringMethodLabel(m) + '</option>').join('') + '</select></div>';
             h += '<div class="form-group"><label>' + t('labels.notes') + '</label><input id="ew-notes" value="' + esc(e.notes||'') + '"></div>';
             h += '<button onclick="saveWatering(' + e.id + ')" style="margin-right:8px;">' + t('actions.save') + '</button>';
             h += '<button onclick="deleteWatering(' + e.id + ')" style="background:#c62828;">' + t('actions.delete') + '</button>';
