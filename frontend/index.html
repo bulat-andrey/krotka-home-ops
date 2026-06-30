@@ -307,13 +307,6 @@ async function renderDashboard() {
         });
         h += '</div>';
     }
-    if (d.rain_history && d.rain_history.length) {
-        h += '<div class="card"><h3>' + t('weather.rainGdynia') + '</h3>';
-        d.rain_history.forEach(w => {
-            h += '<div class="list-item">' + w.date + ': ' + Number(w.rain_mm || 0).toFixed(1) + ' мм</div>';
-        });
-        h += '</div>';
-    }
     if (d.wind) {
         const threshold = Number(d.wind.threshold_kt || 14);
         h += '<div class="card"><h3>' + t('weather.wind') + '</h3>';
