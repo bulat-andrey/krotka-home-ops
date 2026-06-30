@@ -126,6 +126,12 @@ def dashboard():
            WHERE date < ? AND date >= ?""",
         (today_str, (today - timedelta(days=7)).isoformat()),
     ).fetchone()["total"]
+    rain_3d = db.execute(
+        """SELECT COALESCE(SUM(rain_mm), 0) as total
+           FROM weather_daily
+           WHERE date < ? AND date >= ?""",
+        (today_str, (today - timedelta(days=3)).isoformat()),
+    ).fetchone()["total"]
     rain_30d = db.execute(
         """SELECT COALESCE(SUM(rain_mm), 0) as total
            FROM weather_daily
@@ -174,7 +180,7 @@ def dashboard():
         "last_mowing": last_mowing,
         "weather_forecast": [dict(r) for r in weather_forecast],
         "rain_history": [dict(r) for r in rain_history],
-        "rain_totals": {"last_7_days": rain_7d, "last_30_days": rain_30d},
+        "rain_totals": {"last_3_days": rain_3d, "last_7_days": rain_7d, "last_30_days": rain_30d},
         "wind": {
             "threshold_kt": WIND_THRESHOLD_KT,
             "windy_days_30d": windy_days_30d,

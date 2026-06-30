@@ -104,7 +104,7 @@ const I18N = {
         sunLabels: {sun:'Солнце', partial:'Полутень', shade:'Тень', mixed:'Смешано'},
         eventLabels: {watering:'Полив', mowing:'Покос', request:'Заявка'},
         directionLabels: {outgoing:'Исходящее', incoming:'Входящее'},
-        dashboard: {recommendations:'Рекомендации', lastWatering:'Последний полив', mowing:'Покос', openRequests:'Открытых заявок', overdue:'Просрочены', inDays:'через', daysAgo:'дн. назад', noData:'нет данных', list:'Список', wind30:'За 30 дней', archive:'Архив', errorCreateZone:'Не удалось создать зону', errorSaveZone:'Не удалось сохранить зону', errorCreateUser:'Не удалось создать пользователя', errorCreateRequest:'Не удалось создать заявку', errorSaveRequest:'Не удалось сохранить заявку'},
+        dashboard: {context:'Контекст', recommendations:'Рекомендации', lastWatering:'Последний полив', mowing:'Покос', openRequests:'Открытых заявок', overdue:'Просрочены', inDays:'через', daysAgo:'дн. назад', noData:'нет данных', list:'Список', wind30:'За 30 дней', archive:'Архив', errorCreateZone:'Не удалось создать зону', errorSaveZone:'Не удалось сохранить зону', errorCreateUser:'Не удалось создать пользователя', errorCreateRequest:'Не удалось создать заявку', errorSaveRequest:'Не удалось сохранить заявку', today:'Сегодня', tomorrow:'Завтра', rain3:'За 3 дня'},
         mowing: {last:'Последний', next:'Следующий плановый', requestFrom:'Запрос можно отправлять с', requestReady:'Пора готовить запрос', overdue:'Покос просрочен', cycle:'дн. цикл'},
         weather: {forecastRain:'Прогноз дождя', rainGdynia:'Осадки в Гдыне', last7:'За 7 дней', last30:'за 30 дней', wind:'Ветер', nextDays:'Ближайшие дни', lastDays:'Последние дни'},
         watering: {state:'Состояние', log:'Записать полив', history:'История', zone:'Зона', noData:'нет', deleteQuestion:'Удалить запись полива?'},
@@ -136,7 +136,7 @@ const I18N = {
         sunLabels: {sun:'Słońce', partial:'Półcień', shade:'Cień', mixed:'Mieszane'},
         eventLabels: {watering:'Podlewanie', mowing:'Koszenie', request:'Zgłoszenie'},
         directionLabels: {outgoing:'Wychodząca', incoming:'Przychodząca'},
-        dashboard: {recommendations:'Rekomendacje', lastWatering:'Ostatnie podlewanie', mowing:'Koszenie', openRequests:'Otwarte zgłoszenia', overdue:'Przeterminowane', inDays:'za', daysAgo:'dni temu', noData:'brak danych', list:'Lista', wind30:'Przez 30 dni', archive:'Archiwum', errorCreateZone:'Nie udało się utworzyć strefy', errorSaveZone:'Nie udało się zapisać strefy', errorCreateUser:'Nie udało się utworzyć użytkownika', errorCreateRequest:'Nie udało się utworzyć zgłoszenia', errorSaveRequest:'Nie udało się zapisać zgłoszenia'},
+        dashboard: {context:'Kontekst', recommendations:'Rekomendacje', lastWatering:'Ostatnie podlewanie', mowing:'Koszenie', openRequests:'Otwarte zgłoszenia', overdue:'Przeterminowane', inDays:'za', daysAgo:'dni temu', noData:'brak danych', list:'Lista', wind30:'Przez 30 dni', archive:'Archiwum', errorCreateZone:'Nie udało się utworzyć strefy', errorSaveZone:'Nie udało się zapisać strefy', errorCreateUser:'Nie udało się utworzyć użytkownika', errorCreateRequest:'Nie udało się utworzyć zgłoszenia', errorSaveRequest:'Nie udało się zapisać zgłoszenia', today:'Dziś', tomorrow:'Jutro', rain3:'Za 3 dni'},
         mowing: {last:'Ostatnie', next:'Następne planowane', requestFrom:'Zgłoszenie można wysłać od', requestReady:'Czas przygotować zgłoszenie', overdue:'Koszenie jest po terminie', cycle:'d. cykl'},
         weather: {forecastRain:'Prognoza deszczu', rainGdynia:'Opady w Gdyni', last7:'Ostatnie 7 dni', last30:'ostatnie 30 dni', wind:'Wiatr', nextDays:'Najbliższe dni', lastDays:'Ostatnie dni'},
         watering: {state:'Stan', log:'Zapisz podlewanie', history:'Historia', zone:'Strefa', noData:'brak', deleteQuestion:'Usunąć wpis podlewania?'},
@@ -285,6 +285,20 @@ function showTab(tab) {
 async function renderDashboard() {
     const d = await api('/api/dashboard');
     let h = '<h2>' + t('tabs.dashboard') + '</h2>';
+    if ((d.rain_totals && (d.rain_totals.last_3_days !== undefined || d.rain_totals.last_7_days !== undefined)) || (d.weather_forecast && d.weather_forecast.length)) {
+        h += '<div class="card"><h3>' + t('dashboard.context') + '</h3>';
+        if (d.rain_totals) {
+            h += '<div class="list-item">' + t('dashboard.rain3') + ': <b>' + Number(d.rain_totals.last_3_days || 0).toFixed(1) + ' мм</b> | ' + t('weather.last7') + ': <b>' + Number(d.rain_totals.last_7_days || 0).toFixed(1) + ' мм</b></div>';
+        }
+        if (d.weather_forecast && d.weather_forecast.length) {
+            d.weather_forecast.slice(0, 2).forEach((w, i) => {
+                const label = i === 0 ? t('dashboard.today') : t('dashboard.tomorrow');
+                const rain = w.rain_mm !== null && w.rain_mm !== undefined ? Number(w.rain_mm).toFixed(1) : '?';
+                h += '<div class="list-item">' + label + ' (' + w.date + '): <span class="badge ' + (Number(w.rain_mm || 0) >= 5 ? 'badge-blue' : Number(w.rain_mm || 0) > 0 ? 'badge-yellow' : 'badge-gray') + '">' + rain + ' мм</span></div>';
+            });
+        }
+        h += '</div>';
+    }
     if (d.recommendations && d.recommendations.length) {
         h += '<div class="card"><h3>' + t('dashboard.recommendations') + '</h3>';
         d.recommendations.forEach(r => {
@@ -293,27 +307,9 @@ async function renderDashboard() {
         });
         h += '</div>';
     }
-    if (d.last_watering) {
-        h += '<div class="card"><h3>' + t('dashboard.lastWatering') + '</h3>';
-        d.last_watering.forEach(w => {
-            const ds = w.days_since !== null ? w.days_since + ' дн. назад' : t('none');
-            h += '<div class="list-item"><div class="rec-head"><span class="zone-icon" title="' + zoneTypeLabel(w.zone_type) + '">' + wateringIcon(w.zone_type) + '</span><b>' + zoneLabel({code:w.zone_code, name:w.zone_name}) + '</b></div>: ' + ds + '</div>';
-        });
-        h += '</div>';
-    }
-    if (d.weather_forecast && d.weather_forecast.length) {
-        h += '<div class="card"><h3>' + t('weather.forecastRain') + '</h3>';
-        d.weather_forecast.forEach(w => {
-            const rain = w.rain_mm !== null && w.rain_mm !== undefined ? Number(w.rain_mm).toFixed(1) : '?';
-            const temp = w.temp_max !== null && w.temp_max !== undefined ? ' | до ' + Number(w.temp_max).toFixed(0) + '&deg;C' : '';
-            const cls = Number(w.rain_mm || 0) >= 5 ? 'badge-blue' : Number(w.rain_mm || 0) > 0 ? 'badge-yellow' : 'badge-gray';
-            h += '<div class="list-item">' + w.date + ': <span class="badge ' + cls + '">' + rain + ' мм</span>' + temp + '</div>';
-        });
-        h += '</div>';
-    }
     if (d.rain_history && d.rain_history.length) {
         h += '<div class="card"><h3>' + t('weather.rainGdynia') + '</h3>';
-        if (d.rain_totals) h += '<div class="list-item">' + t('weather.last7') + ': <b>' + Number(d.rain_totals.last_7_days || 0).toFixed(1) + ' мм</b> | ' + t('weather.last30') + ': <b>' + Number(d.rain_totals.last_30_days || 0).toFixed(1) + ' мм</b></div>';
+        if (d.rain_totals) h += '<div class="list-item">' + t('dashboard.rain3') + ': <b>' + Number(d.rain_totals.last_3_days || 0).toFixed(1) + ' мм</b> | ' + t('weather.last7') + ': <b>' + Number(d.rain_totals.last_7_days || 0).toFixed(1) + ' мм</b> | ' + t('weather.last30') + ': <b>' + Number(d.rain_totals.last_30_days || 0).toFixed(1) + ' мм</b></div>';
         d.rain_history.forEach(w => {
             h += '<div class="list-item">' + w.date + ': ' + Number(w.rain_mm || 0).toFixed(1) + ' мм</div>';
         });
