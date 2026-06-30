@@ -41,7 +41,13 @@ def dashboard():
     """).fetchall()
     last_watering = []
     for r in watering_rows:
-        d = {"zone_id": r["id"], "zone_code": r["code"], "zone_name": r["name"], "date": r["date"]}
+        d = {
+            "zone_id": r["id"],
+            "zone_code": r["code"],
+            "zone_name": r["name"],
+            "zone_type": r["zone_type"],
+            "date": r["date"],
+        }
         if r["date"]:
             d["days_since"] = (today - date.fromisoformat(r["date"])).days
         else:
