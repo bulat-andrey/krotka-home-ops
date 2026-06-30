@@ -25,8 +25,8 @@
         .alert{background:#fff3e0;border-left:4px solid #ff9800;padding:10px;margin-bottom:10px;border-radius:4px;font-size:14px}
         .alert-red{background:#fbe9e7;border-left-color:#f44336}
         #shell{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
-        #app{flex:1;padding:12px;padding-bottom:70px}
-        nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #ddd;z-index:1000}
+        #app{flex:1;padding:12px}
+        nav{position:fixed;left:0;right:0;top:0;background:#fff;border-bottom:1px solid #ddd;z-index:1000}
         .nav-inner{max-width:480px;margin:0 auto;display:flex;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch}
         nav button{background:none;color:#666;font-size:11px;padding:8px 4px;border-radius:0;min-height:50px;flex:0 0 60px;display:flex;flex-direction:column;align-items:center;gap:2px}
         nav button.active{color:#2196F3}
@@ -46,8 +46,11 @@
         .zone-icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;color:#2e7d32}
         .zone-icon svg{width:18px;height:18px;display:block;fill:currentColor}
         @media (max-width: 640px) {
-            #app{padding-bottom:112px}
-            nav{padding-bottom:env(safe-area-inset-bottom, 0px)}
+            #shell{padding-top:calc(50px + env(safe-area-inset-top, 0px))}
+            nav{padding-top:env(safe-area-inset-top, 0px)}
+        }
+        @media (min-width: 641px) {
+            #shell{padding-top:50px}
         }
     </style>
 </head>
@@ -72,7 +75,6 @@
     <nav>
         <div class="nav-inner">
             <button onclick="showTab('dashboard')" id="tab-dashboard"><span>&#127968;</span></button>
-            <button onclick="showTab('zones')" id="tab-zones"><span>&#128205;</span></button>
             <button onclick="showTab('watering')" id="tab-watering"><span>&#128167;</span></button>
             <button onclick="showTab('mowing')" id="tab-mowing"><span>&#127807;</span></button>
             <button onclick="showTab('requests')" id="tab-requests"><span>&#128203;</span></button>
@@ -80,6 +82,7 @@
             <button onclick="showTab('emails')" id="tab-emails"><span>&#128231;</span></button>
             <button onclick="showTab('events')" id="tab-events"><span>&#128218;</span></button>
             <button onclick="showTab('users')" id="tab-users" class="hidden"><span>&#128101;</span></button>
+            <button onclick="showTab('zones')" id="tab-zones"><span>&#128205;</span></button>
         </div>
     </nav>
 </div>
@@ -100,8 +103,8 @@ const I18N = {
         langRu: 'RU',
         langPl: 'PL',
         tabs: {dashboard:'Главная', zones:'Зоны', watering:'Полив', mowing:'Покос', requests:'Заявки', finance:'Финансы', emails:'Почта', events:'Журнал', users:'Люди'},
-        actions: {create:'Создать', save:'Сохранить', delete:'Удалить', disable:'Отключить'},
-        labels: {code:'Код', name:'Название', type:'Тип', sun:'Солнце', notes:'Заметки', date:'Дата', duration:'Длительность (мин)', method:'Метод', status:'Статус', contractor:'Подрядчик', subject:'Тема', body:'Текст', attachments:'Вложения', filterRequest:'Фильтр по заявке', request:'Заявка', title:'Название', due:'Срок', summary:'Описание', next:'Следующее действие', role:'Роль', username:'Логин', displayName:'Имя', password:'Пароль', quality:'Качество (1-5)', direction:'Направление', sender:'Отправитель', recipient:'Получатель', vendor:'Продавец', amount:'Сумма', currency:'Валюта', category:'Категория', kind:'Тип', reimbursementStatus:'Статус компенсации'},
+        actions: {create:'Создать', save:'Сохранить', delete:'Удалить', disable:'Отключить', enable:'Включить'},
+        labels: {code:'Код', name:'Название', type:'Тип', sun:'Солнце', notes:'Заметки', date:'Дата', duration:'Длительность (мин)', method:'Метод', status:'Статус', contractor:'Подрядчик', subject:'Тема', body:'Текст', attachments:'Вложения', filterRequest:'Фильтр по заявке', request:'Заявка', title:'Название', due:'Срок', summary:'Описание', next:'Следующее действие', role:'Роль', username:'Логин', displayName:'Имя', password:'Пароль', quality:'Качество (1-5)', direction:'Направление', sender:'Отправитель', recipient:'Получатель', vendor:'Продавец', amount:'Сумма', currency:'Валюта', category:'Категория', kind:'Тип', reimbursementStatus:'Статус компенсации', active:'Активен'},
         finance: {new:'Новая трата', list:'Список трат', pending:'Ожидают компенсации', private:'Личные', reimbursable:'Возмещаемые', reimbursed:'Возмещено', notNeeded:'Не нужно', request:'Заявка', recent:'Последние 30 дней', total:'Всего'},
         placeholders: {zoneCode:'W1', zoneName:'Газон у въезда', zoneNotes:'туя, самшит, склон, рядом с парковкой'},
         confirm: {zoneDisable:'Отключить эту зону? История сохранится, но зона исчезнет из активных списков.', wateringDelete:'Удалить запись полива?', requestDelete:'Удалить заявку из списка? Связанные письма останутся в архиве.'},
@@ -133,8 +136,8 @@ const I18N = {
         langRu: 'RU',
         langPl: 'PL',
         tabs: {dashboard:'Główna', zones:'Strefy', watering:'Podlewanie', mowing:'Koszenie', requests:'Zgłoszenia', finance:'Finanse', emails:'Poczta', events:'Dziennik', users:'Ludzie'},
-        actions: {create:'Utwórz', save:'Zapisz', delete:'Usuń', disable:'Wyłącz'},
-        labels: {code:'Kod', name:'Nazwa', type:'Typ', sun:'Słońce', notes:'Notatki', date:'Data', duration:'Czas trwania (min)', method:'Metoda', status:'Status', contractor:'Wykonawca', subject:'Temat', body:'Treść', attachments:'Załączniki', filterRequest:'Filtr po zgłoszeniu', request:'Zgłoszenie', title:'Tytuł', due:'Termin', summary:'Opis', next:'Następne działanie', role:'Rola', username:'Login', displayName:'Imię', password:'Hasło', quality:'Jakość (1-5)', direction:'Kierunek', sender:'Nadawca', recipient:'Odbiorca', vendor:'Sprzedawca', amount:'Kwota', currency:'Waluta', category:'Kategoria', kind:'Typ', reimbursementStatus:'Status zwrotu'},
+        actions: {create:'Utwórz', save:'Zapisz', delete:'Usuń', disable:'Wyłącz', enable:'Włącz'},
+        labels: {code:'Kod', name:'Nazwa', type:'Typ', sun:'Słońce', notes:'Notatki', date:'Data', duration:'Czas trwania (min)', method:'Metoda', status:'Status', contractor:'Wykonawca', subject:'Temat', body:'Treść', attachments:'Załączniki', filterRequest:'Filtr po zgłoszeniu', request:'Zgłoszenie', title:'Tytuł', due:'Termin', summary:'Opis', next:'Następne działanie', role:'Rola', username:'Login', displayName:'Imię', password:'Hasło', quality:'Jakość (1-5)', direction:'Kierunek', sender:'Nadawca', recipient:'Odbiorca', vendor:'Sprzedawca', amount:'Kwota', currency:'Waluta', category:'Kategoria', kind:'Typ', reimbursementStatus:'Status zwrotu', active:'Aktywny'},
         finance: {new:'Nowy wydatek', list:'Lista wydatków', pending:'Czeka na zwrot', private:'Prywatne', reimbursable:'Do zwrotu', reimbursed:'Zwrócone', notNeeded:'Niepotrzebne', request:'Zgłoszenie', recent:'Ostatnie 30 dni', total:'Razem'},
         placeholders: {zoneCode:'W1', zoneName:'Trawnik przy wjeździe', zoneNotes:'tuja, bukszpan, skarpa, przy parkingu'},
         confirm: {zoneDisable:'Wyłączyć tę strefę? Historia zostanie, ale strefa zniknie z aktywnych list.', wateringDelete:'Usunąć wpis podlewania?', requestDelete:'Usunąć zgłoszenie z listy? Powiązane wiadomości zostaną w archiwum.'},
@@ -839,6 +842,8 @@ async function renderEvents() {
 }
 
 // === USERS ===
+let editingUserId = null;
+
 async function renderUsers() {
     const list = await api('/api/users');
     let h = '<h2>' + t('tabs.users') + '</h2><div class="card"><h3>' + t('users.new') + '</h3>';
@@ -851,10 +856,27 @@ async function renderUsers() {
     list.forEach(u => {
         const role = u.role === 'admin' ? t('users.admin') : t('users.member');
         const cls = u.role === 'admin' ? 'badge-blue' : 'badge-gray';
-        h += '<div class="list-item"><b>' + u.username + '</b> <span class="badge ' + cls + '">' + role + '</span><br><small>' + (u.display_name || '') + (u.active ? '' : ' | отключен') + '</small></div>';
+        h += '<div class="list-item"><b>' + esc(u.username) + '</b> <span class="badge ' + cls + '">' + role + '</span><br><small>' + esc(u.display_name || '') + (u.active ? '' : ' | ' + (LANG === 'pl' ? 'wyłączony' : 'отключен')) + '</small><br>';
+        h += '<button style="padding:4px 8px;font-size:12px;min-height:auto;margin-top:6px;" onclick="toggleUserEditor(' + u.id + ')">&#9998;</button></div>';
+        if (editingUserId === u.id) {
+            h += '<div style="margin-top:10px;">';
+            h += '<div class="form-group"><label>' + t('labels.username') + '</label><input id="eu-username" value="' + esc(u.username) + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.displayName') + '</label><input id="eu-display" value="' + esc(u.display_name || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.password') + '</label><input type="password" id="eu-password" placeholder="' + (LANG === 'pl' ? 'zostaw puste bez zmian' : 'оставьте пустым, чтобы не менять') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.role') + '</label><select id="eu-role"><option value="member"' + (u.role === 'member' ? ' selected' : '') + '>' + t('users.member') + '</option><option value="admin"' + (u.role === 'admin' ? ' selected' : '') + '>' + t('users.admin') + '</option></select></div>';
+            h += '<div class="form-group"><label>' + t('labels.active') + '</label><select id="eu-active"><option value="1"' + (u.active ? ' selected' : '') + '>' + t('yes') + '</option><option value="0"' + (!u.active ? ' selected' : '') + '>' + t('no') + '</option></select></div>';
+            h += '<button onclick="saveUser(' + u.id + ')" style="margin-right:8px;">' + t('actions.save') + '</button>';
+            h += '<button onclick="toggleUserActive(' + u.id + ',' + (u.active ? '0' : '1') + ')" style="background:#777;margin-right:8px;">' + (u.active ? t('actions.disable') : t('actions.enable')) + '</button>';
+            h += '</div>';
+        }
     });
     h += '</div>';
     document.getElementById('app').innerHTML = h;
+}
+
+function toggleUserEditor(id) {
+    editingUserId = editingUserId === id ? null : id;
+    renderUsers();
 }
 
 async function submitUser() {
@@ -871,6 +893,48 @@ async function submitUser() {
         const body = await r.json().catch(() => ({}));
         err.textContent = body.detail || t('dashboard.errorCreateUser');
         err.classList.remove('hidden');
+        return;
+    }
+    renderUsers();
+}
+
+async function saveUser(id) {
+    const newUsername = document.getElementById('eu-username').value.trim();
+    const newPassword = document.getElementById('eu-password').value;
+    const data = {
+        username: newUsername,
+        display_name: document.getElementById('eu-display').value.trim(),
+        role: document.getElementById('eu-role').value,
+        active: document.getElementById('eu-active').value === '1'
+    };
+    if (newPassword) data.password = newPassword;
+    const r = await fetch('/api/users/' + id, {method:'PUT', headers: authHeaders(), body: JSON.stringify(data)});
+    if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        alert(body.detail || (LANG === 'pl' ? 'Nie udało się zapisać użytkownika' : 'Не удалось сохранить пользователя'));
+        return;
+    }
+    editingUserId = null;
+    if (CURRENT_USER && CURRENT_USER.id === id) {
+        sessionStorage.setItem('username', newUsername);
+        if (newPassword) sessionStorage.setItem('password', newPassword);
+        location.reload();
+        return;
+    }
+    renderUsers();
+}
+
+async function toggleUserActive(id, nextState) {
+    const data = {active: !!nextState};
+    const r = await fetch('/api/users/' + id, {method:'PUT', headers: authHeaders(), body: JSON.stringify(data)});
+    if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        alert(body.detail || (LANG === 'pl' ? 'Nie udało się zapisać użytkownika' : 'Не удалось сохранить пользователя'));
+        return;
+    }
+    if (CURRENT_USER && CURRENT_USER.id === id) {
+        sessionStorage.setItem('username', CURRENT_USER.username);
+        location.reload();
         return;
     }
     renderUsers();

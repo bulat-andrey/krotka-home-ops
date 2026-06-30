@@ -206,7 +206,7 @@ def init_db():
             )
 
     # Seed contractors
-    for name in ("Dawid", "Mateusz", "Bartek", "Gestia"):
+    for name in ("Andrei", "Dawid", "Mateusz", "Bartek", "Gestia"):
         conn.execute("INSERT OR IGNORE INTO contractors (name) VALUES (?)", (name,))
 
     conn.commit()
