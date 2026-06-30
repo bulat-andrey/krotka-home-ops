@@ -36,6 +36,9 @@
         .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
         .login-box{background:#fff;padding:30px;border-radius:12px;width:100%;box-shadow:0 4px 12px rgba(0,0,0,.1)}
         .login-box h1{margin-bottom:20px;text-align:center}
+        .lang-switch{display:flex;gap:8px;justify-content:flex-end;margin-bottom:10px}
+        .lang-switch button{padding:8px 12px;min-height:auto;font-size:13px;background:#eceff1;color:#455a64}
+        .lang-switch button.active{background:#2196F3;color:#fff}
     </style>
 </head>
 <body>
@@ -43,14 +46,16 @@
 <div id="login-screen" class="login-wrap">
     <div class="login-box">
         <h1>Krotka Home Ops</h1>
+        <div class="lang-switch" id="login-lang-switch"></div>
         <input type="text" id="login-user" placeholder="Пользователь" value="admin" autocomplete="username">
         <input type="password" id="login-pass" placeholder="Пароль">
-        <button onclick="doLogin()" style="width:100%;margin-top:8px;">Войти</button>
+        <button onclick="doLogin()" id="login-button" style="width:100%;margin-top:8px;">Войти</button>
         <p id="login-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;">Неверный логин или пароль</p>
     </div>
 </div>
 
 <div id="main-app" class="hidden">
+    <div id="app-toolbar" style="padding:12px 12px 0 12px;"></div>
     <div id="app"></div>
     <nav>
         <button onclick="showTab('dashboard')" id="tab-dashboard"><span>&#127968;</span>Главная</button>
@@ -68,6 +73,122 @@
 let USERNAME = 'admin';
 let PASSWORD = '';
 let CURRENT_USER = null;
+let LANG = localStorage.getItem('lang') || (navigator.language && navigator.language.toLowerCase().startsWith('pl') ? 'pl' : 'ru');
+
+const I18N = {
+    ru: {
+        appTitle: 'Krotka Home Ops',
+        loginUser: 'Пользователь',
+        loginPass: 'Пароль',
+        login: 'Войти',
+        loginError: 'Неверный логин или пароль',
+        langRu: 'RU',
+        langPl: 'PL',
+        tabs: {dashboard:'Главная', zones:'Зоны', watering:'Полив', mowing:'Покос', requests:'Заявки', emails:'Почта', events:'Журнал', users:'Люди'},
+        actions: {create:'Создать', save:'Сохранить', delete:'Удалить', disable:'Отключить'},
+        labels: {code:'Код', name:'Название', type:'Тип', sun:'Солнце', notes:'Заметки', date:'Дата', duration:'Длительность (мин)', method:'Метод', status:'Статус', contractor:'Подрядчик', subject:'Тема', body:'Текст', attachments:'Вложения', filterRequest:'Фильтр по заявке', request:'Заявка', title:'Название', due:'Срок', summary:'Описание', next:'Следующее действие', role:'Роль', username:'Логин', displayName:'Имя', password:'Пароль', quality:'Качество (1-5)', direction:'Направление', sender:'Отправитель', recipient:'Получатель'},
+        placeholders: {zoneCode:'W1', zoneName:'Газон у въезда', zoneNotes:'туя, самшит, склон, рядом с парковкой'},
+        confirm: {zoneDisable:'Отключить эту зону? История сохранится, но зона исчезнет из активных списков.', wateringDelete:'Удалить запись полива?', requestDelete:'Удалить заявку из списка? Связанные письма останутся в архиве.'},
+        none: 'нет данных',
+        no: 'Нет',
+        yes: 'Да',
+        language: 'Язык',
+        recStatus: {'Полить сегодня':'Полить сегодня','Можно подождать':'Можно подождать','Не поливать, ожидается дождь':'Не поливать, ожидается дождь'},
+        requestStatus: {draft:'Черновик', sent:'Отправлено', waiting:'Ожидание', answered:'Ответ', closed:'Закрыто'},
+        requestStatusShort: {draft:'черновик', sent:'отправлено', waiting:'ожидание', answered:'ответ', closed:'закрыто'},
+        requestStatusOptions: {draft:'Черновик', sent:'Отправлено', waiting:'Ожидание', answered:'Ответ', closed:'Закрыто'},
+        typeLabels: {lawn:'Газон', bushes:'Кустарники', new_plants:'Новые посадки', tree:'Дерево', hedge:'Живая изгородь', other:'Другое'},
+        sunLabels: {sun:'Солнце', partial:'Полутень', shade:'Тень', mixed:'Смешано'},
+        eventLabels: {watering:'Полив', mowing:'Покос', request:'Заявка'},
+        directionLabels: {outgoing:'Исходящее', incoming:'Входящее'},
+        dashboard: {recommendations:'Рекомендации', lastWatering:'Последний полив', mowing:'Покос', openRequests:'Открытых заявок', overdue:'Просрочены', inDays:'через', daysAgo:'дн. назад', noData:'нет данных', list:'Список'},
+        mowing: {last:'Последний', next:'Следующий плановый', requestFrom:'Запрос можно отправлять с', requestReady:'Пора готовить запрос', overdue:'Покос просрочен', cycle:'дн. цикл'},
+        weather: {forecastRain:'Прогноз дождя', rainGdynia:'Осадки в Гдыне', last7:'За 7 дней', last30:'за 30 дней', wind:'Ветер', nextDays:'Ближайшие дни', lastDays:'Последние дни'},
+        watering: {state:'Состояние', log:'Записать полив', history:'История', zone:'Зона', noData:'нет', deleteQuestion:'Удалить запись полива?'},
+        requests: {new:'Новая заявка', list:'Список', status:'Статус', all:'Все'},
+        users: {new:'Новый пользователь', list:'Список', member:'Участник', admin:'Админ'}
+    },
+    pl: {
+        appTitle: 'Krotka Home Ops',
+        loginUser: 'Użytkownik',
+        loginPass: 'Hasło',
+        login: 'Zaloguj',
+        loginError: 'Nieprawidłowy login lub hasło',
+        langRu: 'RU',
+        langPl: 'PL',
+        tabs: {dashboard:'Główna', zones:'Strefy', watering:'Podlewanie', mowing:'Koszenie', requests:'Zgłoszenia', emails:'Poczta', events:'Dziennik', users:'Ludzie'},
+        actions: {create:'Utwórz', save:'Zapisz', delete:'Usuń', disable:'Wyłącz'},
+        labels: {code:'Kod', name:'Nazwa', type:'Typ', sun:'Słońce', notes:'Notatki', date:'Data', duration:'Czas trwania (min)', method:'Metoda', status:'Status', contractor:'Wykonawca', subject:'Temat', body:'Treść', attachments:'Załączniki', filterRequest:'Filtr po zgłoszeniu', request:'Zgłoszenie', title:'Tytuł', due:'Termin', summary:'Opis', next:'Następne działanie', role:'Rola', username:'Login', displayName:'Imię', password:'Hasło', quality:'Jakość (1-5)', direction:'Kierunek', sender:'Nadawca', recipient:'Odbiorca'},
+        placeholders: {zoneCode:'W1', zoneName:'Trawnik przy wjeździe', zoneNotes:'tuja, bukszpan, skarpa, przy parkingu'},
+        confirm: {zoneDisable:'Wyłączyć tę strefę? Historia zostanie, ale strefa zniknie z aktywnych list.', wateringDelete:'Usunąć wpis podlewania?', requestDelete:'Usunąć zgłoszenie z listy? Powiązane wiadomości zostaną w archiwum.'},
+        none: 'brak danych',
+        no: 'Nie',
+        yes: 'Tak',
+        language: 'Język',
+        recStatus: {'Полить сегодня':'Podlać dziś','Можно подождать':'Można poczekać','Не поливать, ожидается дождь':'Nie podlewać, spodziewany deszcz'},
+        requestStatus: {draft:'Szkic', sent:'Wysłano', waiting:'Oczekiwanie', answered:'Odpowiedź', closed:'Zamknięte'},
+        requestStatusShort: {draft:'szkic', sent:'wysłano', waiting:'oczekiwanie', answered:'odpowiedź', closed:'zamknięte'},
+        requestStatusOptions: {draft:'Szkic', sent:'Wysłano', waiting:'Oczekiwanie', answered:'Odpowiedź', closed:'Zamknięte'},
+        typeLabels: {lawn:'Trawnik', bushes:'Krzewy', new_plants:'Nowe nasadzenia', tree:'Drzewo', hedge:'Żywopłot', other:'Inne'},
+        sunLabels: {sun:'Słońce', partial:'Półcień', shade:'Cień', mixed:'Mieszane'},
+        eventLabels: {watering:'Podlewanie', mowing:'Koszenie', request:'Zgłoszenie'},
+        directionLabels: {outgoing:'Wychodząca', incoming:'Przychodząca'},
+        dashboard: {recommendations:'Rekomendacje', lastWatering:'Ostatnie podlewanie', mowing:'Koszenie', openRequests:'Otwarte zgłoszenia', overdue:'Przeterminowane', inDays:'za', daysAgo:'dni temu', noData:'brak danych', list:'Lista'},
+        mowing: {last:'Ostatnie', next:'Następne planowane', requestFrom:'Zgłoszenie można wysłać od', requestReady:'Czas przygotować zgłoszenie', overdue:'Koszenie jest po terminie', cycle:'d. cykl'},
+        weather: {forecastRain:'Prognoza deszczu', rainGdynia:'Opady w Gdyni', last7:'Ostatnie 7 dni', last30:'ostatnie 30 dni', wind:'Wiatr', nextDays:'Najbliższe dni', lastDays:'Ostatnie dni'},
+        watering: {state:'Stan', log:'Zapisz podlewanie', history:'Historia', zone:'Strefa', noData:'brak', deleteQuestion:'Usunąć wpis podlewania?'},
+        requests: {new:'Nowe zgłoszenie', list:'Lista', status:'Status', all:'Wszystkie'},
+        users: {new:'Nowy użytkownik', list:'Lista', member:'Uczestnik', admin:'Admin'}
+    }
+};
+
+function t(path) {
+    return path.split('.').reduce((acc, key) => acc && acc[key], I18N[LANG]) || path;
+}
+
+function setLanguage(lang) {
+    LANG = lang === 'pl' ? 'pl' : 'ru';
+    localStorage.setItem('lang', LANG);
+    document.documentElement.lang = LANG;
+    renderLanguageSwitches();
+    renderStaticLabels();
+    if (document.getElementById('main-app') && !document.getElementById('main-app').classList.contains('hidden') && currentTab) {
+        showTab(currentTab);
+    }
+}
+
+function renderLanguageSwitches() {
+    const html = ['ru', 'pl'].map(lang => '<button class="' + (LANG === lang ? 'active' : '') + '" onclick="setLanguage(\'' + lang + '\')">' + t('lang' + (lang === 'ru' ? 'Ru' : 'Pl')) + '</button>').join('');
+    const loginSwitch = document.getElementById('login-lang-switch');
+    if (loginSwitch) loginSwitch.innerHTML = html;
+    const toolbar = document.getElementById('app-toolbar');
+    if (toolbar) toolbar.innerHTML = '<div class="lang-switch">' + html + '</div>';
+}
+
+function renderStaticLabels() {
+    document.title = t('appTitle');
+    document.getElementById('login-user').placeholder = t('loginUser');
+    document.getElementById('login-pass').placeholder = t('loginPass');
+    document.getElementById('login-button').textContent = t('login');
+    document.getElementById('login-error').textContent = t('loginError');
+    document.getElementById('tab-dashboard').innerHTML = '<span>&#127968;</span>' + t('tabs.dashboard');
+    document.getElementById('tab-zones').innerHTML = '<span>&#128205;</span>' + t('tabs.zones');
+    document.getElementById('tab-watering').innerHTML = '<span>&#128167;</span>' + t('tabs.watering');
+    document.getElementById('tab-mowing').innerHTML = '<span>&#127807;</span>' + t('tabs.mowing');
+    document.getElementById('tab-requests').innerHTML = '<span>&#128203;</span>' + t('tabs.requests');
+    document.getElementById('tab-emails').innerHTML = '<span>&#128231;</span>' + t('tabs.emails');
+    document.getElementById('tab-events').innerHTML = '<span>&#128218;</span>' + t('tabs.events');
+    document.getElementById('tab-users').innerHTML = '<span>&#128101;</span>' + t('tabs.users');
+}
+
+function zoneTypeLabel(v) { return t('typeLabels.' + v) || v || ''; }
+function sunLabel(v) { return t('sunLabels.' + v) || v || ''; }
+function requestStatusLabel(v) { return t('requestStatus.' + v) || v || ''; }
+function requestStatusShort(v) { return t('requestStatusShort.' + v) || v || ''; }
+function eventLabel(v) { return t('eventLabels.' + v) || v || ''; }
+function directionLabel(v) { return t('directionLabels.' + v) || v || ''; }
+function recStatusLabel(v) { return t('recStatus.' + v) || v || ''; }
+function yesNo(v) { return v ? t('yes') : t('no'); }
 
 function zoneLabel(z) { return (z.code ? z.code + ' - ' : '') + z.name; }
 function esc(v) {
@@ -98,6 +219,7 @@ async function doLogin() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
             updateUserNav();
+            renderLanguageSwitches();
             showTab('dashboard');
         } else {
             document.getElementById('login-error').classList.remove('hidden');
@@ -108,12 +230,15 @@ async function doLogin() {
 async function init() {
     USERNAME = sessionStorage.getItem('username') || 'admin';
     PASSWORD = sessionStorage.getItem('password');
+    renderLanguageSwitches();
+    renderStaticLabels();
     if (PASSWORD) {
         try {
             CURRENT_USER = await api('/api/users/me');
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
             updateUserNav();
+            renderLanguageSwitches();
             showTab('dashboard');
         } catch(e) {
             sessionStorage.removeItem('username');
@@ -138,25 +263,25 @@ function showTab(tab) {
 // === DASHBOARD ===
 async function renderDashboard() {
     const d = await api('/api/dashboard');
-    let h = '<h2>Главная</h2>';
+    let h = '<h2>' + t('tabs.dashboard') + '</h2>';
     if (d.recommendations && d.recommendations.length) {
-        h += '<div class="card"><h3>Рекомендации</h3>';
+        h += '<div class="card"><h3>' + t('dashboard.recommendations') + '</h3>';
         d.recommendations.forEach(r => {
             const c = r.status === 'Полить сегодня' ? 'badge-red' : r.status === 'Можно подождать' ? 'badge-yellow' : 'badge-green';
-            h += '<div class="list-item"><b>' + zoneLabel({code:r.zone_code, name:r.zone_name}) + '</b>: <span class="badge ' + c + '">' + r.status + '</span><br><small>' + (r.reason||'') + '</small></div>';
+            h += '<div class="list-item"><b>' + zoneLabel({code:r.zone_code, name:r.zone_name}) + '</b>: <span class="badge ' + c + '">' + recStatusLabel(r.status) + '</span><br><small>' + (r.reason||'') + '</small></div>';
         });
         h += '</div>';
     }
     if (d.last_watering) {
-        h += '<div class="card"><h3>Последний полив</h3>';
+        h += '<div class="card"><h3>' + t('dashboard.lastWatering') + '</h3>';
         d.last_watering.forEach(w => {
-            const ds = w.days_since !== null ? w.days_since + ' дн. назад' : 'нет данных';
+            const ds = w.days_since !== null ? w.days_since + ' дн. назад' : t('none');
             h += '<div class="list-item">' + zoneLabel({code:w.zone_code, name:w.zone_name}) + ': ' + ds + '</div>';
         });
         h += '</div>';
     }
     if (d.weather_forecast && d.weather_forecast.length) {
-        h += '<div class="card"><h3>Прогноз дождя</h3>';
+        h += '<div class="card"><h3>' + t('weather.forecastRain') + '</h3>';
         d.weather_forecast.forEach(w => {
             const rain = w.rain_mm !== null && w.rain_mm !== undefined ? Number(w.rain_mm).toFixed(1) : '?';
             const temp = w.temp_max !== null && w.temp_max !== undefined ? ' | до ' + Number(w.temp_max).toFixed(0) + '&deg;C' : '';
@@ -166,8 +291,8 @@ async function renderDashboard() {
         h += '</div>';
     }
     if (d.rain_history && d.rain_history.length) {
-        h += '<div class="card"><h3>Осадки в Гдыне</h3>';
-        if (d.rain_totals) h += '<div class="list-item">За 7 дней: <b>' + Number(d.rain_totals.last_7_days || 0).toFixed(1) + ' мм</b> | за 30 дней: <b>' + Number(d.rain_totals.last_30_days || 0).toFixed(1) + ' мм</b></div>';
+        h += '<div class="card"><h3>' + t('weather.rainGdynia') + '</h3>';
+        if (d.rain_totals) h += '<div class="list-item">' + t('weather.last7') + ': <b>' + Number(d.rain_totals.last_7_days || 0).toFixed(1) + ' мм</b> | ' + t('weather.last30') + ': <b>' + Number(d.rain_totals.last_30_days || 0).toFixed(1) + ' мм</b></div>';
         d.rain_history.forEach(w => {
             h += '<div class="list-item">' + w.date + ': ' + Number(w.rain_mm || 0).toFixed(1) + ' мм</div>';
         });
@@ -175,10 +300,10 @@ async function renderDashboard() {
     }
     if (d.wind) {
         const threshold = Number(d.wind.threshold_kt || 14);
-        h += '<div class="card"><h3>Ветер</h3>';
+        h += '<div class="card"><h3>' + t('weather.wind') + '</h3>';
         h += '<div class="list-item">За 30 дней: <b>' + (d.wind.windy_days_30d || 0) + '</b> дн. с часом >= ' + threshold.toFixed(0) + ' kt</div>';
         if (d.wind.forecast && d.wind.forecast.length) {
-            h += '<h3>Ближайшие дни</h3>';
+            h += '<h3>' + t('weather.nextDays') + '</h3>';
             d.wind.forecast.forEach(w => {
                 const maxWind = Number(w.max_wind_kt || 0);
                 const hours = Number(w.hours_over_threshold || 0);
@@ -189,7 +314,7 @@ async function renderDashboard() {
             });
         }
         if (d.wind.history && d.wind.history.length) {
-            h += '<h3>Последние дни</h3>';
+            h += '<h3>' + t('weather.lastDays') + '</h3>';
             d.wind.history.slice(0, 7).forEach(w => {
                 h += '<div class="list-item">' + w.date + ': max ' + Number(w.max_wind_kt || 0).toFixed(1) + ' kt';
                 if (Number(w.hours_over_threshold || 0)) h += ' | ' + Number(w.hours_over_threshold) + ' ч >= ' + threshold.toFixed(0) + ' kt';
@@ -200,19 +325,19 @@ async function renderDashboard() {
     }
     if (d.last_mowing) {
         const m = d.last_mowing;
-        h += '<div class="card"><h3>Покос</h3><div>Последний: ' + (m.date || 'нет данных') + ' (' + (m.days_since !== null ? m.days_since + ' дн. назад' : '?') + ')</div>';
+        h += '<div class="card"><h3>' + t('dashboard.mowing') + '</h3><div>' + t('mowing.last') + ': ' + (m.date || t('none')) + ' (' + (m.days_since !== null ? m.days_since + ' ' + t('dashboard.daysAgo') : '?') + ')</div>';
         if (m.next_date) {
-            h += '<div class="list-item">Следующий плановый: <b>' + m.next_date + '</b> (' + m.interval_days + ' дн. цикл)</div>';
-            h += '<div class="list-item">Запрос можно отправлять с: <b>' + m.request_from + '</b>';
-            if (m.request_due) h += ' <span class="badge badge-yellow">Пора готовить запрос</span>';
-            else h += ' <span class="badge badge-gray">через ' + m.days_until_request + ' дн.</span>';
+            h += '<div class="list-item">' + t('mowing.next') + ': <b>' + m.next_date + '</b> (' + m.interval_days + ' ' + t('mowing.cycle') + ')</div>';
+            h += '<div class="list-item">' + t('mowing.requestFrom') + ': <b>' + m.request_from + '</b>';
+            if (m.request_due) h += ' <span class="badge badge-yellow">' + t('mowing.requestReady') + '</span>';
+            else h += ' <span class="badge badge-gray">' + t('dashboard.inDays') + ' ' + m.days_until_request + ' дн.</span>';
             h += '</div>';
         }
-        if (m.overdue) h += '<div class="alert alert-red">Покос просрочен</div>';
+        if (m.overdue) h += '<div class="alert alert-red">' + t('mowing.overdue') + '</div>';
         h += '</div></div>';
     }
-    if (d.open_requests > 0) h += '<div class="alert">Открытых заявок: ' + d.open_requests + '</div>';
-    if (d.overdue_responses && d.overdue_responses.length) h += '<div class="alert alert-red">Просрочены: ' + d.overdue_responses.join(', ') + '</div>';
+    if (d.open_requests > 0) h += '<div class="alert">' + t('dashboard.openRequests') + ': ' + d.open_requests + '</div>';
+    if (d.overdue_responses && d.overdue_responses.length) h += '<div class="alert alert-red">' + t('dashboard.overdue') + ': ' + d.overdue_responses.join(', ') + '</div>';
     document.getElementById('app').innerHTML = h;
 }
 
@@ -221,14 +346,14 @@ let zones = [];
 let editingZoneId = null;
 async function renderZones() {
     zones = await api('/api/zones');
-    let h = '<h2>Зоны</h2><div class="card"><h3>Новая зона</h3>';
-    h += '<div class="form-group"><label>Код</label><input id="z-code" placeholder="W1"></div>';
-    h += '<div class="form-group"><label>Название</label><input id="z-name" placeholder="Газон у въезда"></div>';
-    h += '<div class="form-group"><label>Тип</label><select id="z-type"><option value="lawn">Газон</option><option value="bushes">Кустарники</option><option value="new_plants">Новые посадки</option><option value="tree">Дерево</option><option value="hedge">Живая изгородь</option><option value="other">Другое</option></select></div>';
-    h += '<div class="form-group"><label>Солнце</label><select id="z-sun"><option value="sun">Солнце</option><option value="partial">Полутень</option><option value="shade">Тень</option><option value="mixed">Смешано</option></select></div>';
-    h += '<div class="form-group"><label>Заметки</label><input id="z-notes" placeholder="туя, самшит, склон, рядом с парковкой"></div>';
-    h += '<button onclick="submitZone()">Создать</button><p id="z-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p></div>';
-    h += '<div class="card"><h3>Список</h3>';
+    let h = '<h2>' + t('tabs.zones') + '</h2><div class="card"><h3>' + t('actions.create') + '</h3>';
+    h += '<div class="form-group"><label>' + t('labels.code') + '</label><input id="z-code" placeholder="W1"></div>';
+    h += '<div class="form-group"><label>' + t('labels.name') + '</label><input id="z-name" placeholder="' + t('placeholders.zoneName') + '"></div>';
+    h += '<div class="form-group"><label>' + t('labels.type') + '</label><select id="z-type"><option value="lawn">' + zoneTypeLabel('lawn') + '</option><option value="bushes">' + zoneTypeLabel('bushes') + '</option><option value="new_plants">' + zoneTypeLabel('new_plants') + '</option><option value="tree">' + zoneTypeLabel('tree') + '</option><option value="hedge">' + zoneTypeLabel('hedge') + '</option><option value="other">' + zoneTypeLabel('other') + '</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.sun') + '</label><select id="z-sun"><option value="sun">' + sunLabel('sun') + '</option><option value="partial">' + sunLabel('partial') + '</option><option value="shade">' + sunLabel('shade') + '</option><option value="mixed">' + sunLabel('mixed') + '</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.notes') + '</label><input id="z-notes" placeholder="' + t('placeholders.zoneNotes') + '"></div>';
+    h += '<button onclick="submitZone()">' + t('actions.create') + '</button><p id="z-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p></div>';
+    h += '<div class="card"><h3>' + t('dashboard.list') + '</h3>';
     const typeOptions = [
         ['lawn', 'Газон'],
         ['bushes', 'Кустарники'],
@@ -244,17 +369,17 @@ async function renderZones() {
         ['mixed', 'Смешано']
     ];
     zones.forEach(z => {
-        h += '<div class="list-item"><b>' + zoneLabel(z) + '</b><br><small>' + (z.type || '') + (z.sun_exposure ? ' | ' + z.sun_exposure : '') + (z.notes ? ' | ' + z.notes : '') + '</small><br>';
+        h += '<div class="list-item"><b>' + zoneLabel(z) + '</b><br><small>' + zoneTypeLabel(z.type) + (z.sun_exposure ? ' | ' + sunLabel(z.sun_exposure) : '') + (z.notes ? ' | ' + z.notes : '') + '</small><br>';
         h += '<button style="padding:4px 8px;font-size:12px;min-height:auto;margin-top:6px;" onclick="toggleZoneEditor(' + z.id + ')">&#9998;</button></div>';
         if (editingZoneId === z.id) {
             h += '<div style="margin-top:10px;">';
-            h += '<div class="form-group"><label>Код</label><input id="ez-code" value="' + esc(z.code || '') + '"></div>';
-            h += '<div class="form-group"><label>Название</label><input id="ez-name" value="' + esc(z.name || '') + '"></div>';
-            h += '<div class="form-group"><label>Тип</label><select id="ez-type">' + typeOptions.map(o => '<option value="' + o[0] + '"' + (z.type === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></div>';
-            h += '<div class="form-group"><label>Солнце</label><select id="ez-sun">' + sunOptions.map(o => '<option value="' + o[0] + '"' + (z.sun_exposure === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></div>';
-            h += '<div class="form-group"><label>Заметки</label><input id="ez-notes" value="' + esc(z.notes || '') + '"></div>';
-            h += '<button onclick="saveZone(' + z.id + ')" style="margin-right:8px;">Сохранить</button>';
-            h += '<button onclick="deactivateZone(' + z.id + ')" style="background:#777;">Отключить</button>';
+            h += '<div class="form-group"><label>' + t('labels.code') + '</label><input id="ez-code" value="' + esc(z.code || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.name') + '</label><input id="ez-name" value="' + esc(z.name || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.type') + '</label><select id="ez-type">' + typeOptions.map(o => '<option value="' + o[0] + '"' + (z.type === o[0] ? ' selected' : '') + '>' + zoneTypeLabel(o[0]) + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>' + t('labels.sun') + '</label><select id="ez-sun">' + sunOptions.map(o => '<option value="' + o[0] + '"' + (z.sun_exposure === o[0] ? ' selected' : '') + '>' + sunLabel(o[0]) + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>' + t('labels.notes') + '</label><input id="ez-notes" value="' + esc(z.notes || '') + '"></div>';
+            h += '<button onclick="saveZone(' + z.id + ')" style="margin-right:8px;">' + t('actions.save') + '</button>';
+            h += '<button onclick="deactivateZone(' + z.id + ')" style="background:#777;">' + t('actions.disable') + '</button>';
             h += '<p id="ez-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p>';
             h += '</div>';
         }
@@ -313,7 +438,7 @@ async function saveZone(id) {
 }
 
 async function deactivateZone(id) {
-    if (!confirm('Отключить эту зону? История сохранится, но зона исчезнет из активных списков.')) return;
+    if (!confirm(t('confirm.zoneDisable'))) return;
     await api('/api/zones/' + id, {method:'DELETE'});
     editingZoneId = null;
     zones = [];
@@ -326,16 +451,16 @@ async function renderWatering() {
     if (!zones.length) zones = await api('/api/zones');
     const history = await api('/api/watering');
     const last = await api('/api/watering/last');
-    let h = '<h2>Полив</h2><div class="card"><h3>Состояние</h3>';
-    last.forEach(z => { h += '<div class="list-item">' + zoneLabel(z) + ': ' + (z.days_since !== null ? z.days_since + ' дн. назад' : 'нет') + '</div>'; });
-    h += '</div><div class="card"><h3>Записать полив</h3>';
-    h += '<div class="form-group"><label>Зона</label><select id="w-zone">' + zones.map(z => '<option value="' + z.id + '">' + zoneLabel(z) + '</option>').join('') + '</select></div>';
-    h += '<div class="form-group"><label>Дата</label><input type="date" id="w-date" value="' + new Date().toISOString().slice(0,10) + '"></div>';
-    h += '<div class="form-group"><label>Длительность (мин)</label><input type="number" id="w-dur" value="15"></div>';
-    h += '<div class="form-group"><label>Метод</label><select id="w-method"><option value="дождеватель">Дождеватель</option><option value="пистолет">Пистолет</option></select></div>';
-    h += '<div class="form-group"><label>Заметки</label><input id="w-notes"></div>';
-    h += '<button onclick="submitWatering()">Сохранить</button></div>';
-    h += '<div class="card"><h3>История</h3>';
+    let h = '<h2>' + t('tabs.watering') + '</h2><div class="card"><h3>' + t('watering.state') + '</h3>';
+    last.forEach(z => { h += '<div class="list-item">' + zoneLabel(z) + ': ' + (z.days_since !== null ? z.days_since + ' дн. назад' : t('watering.noData')) + '</div>'; });
+    h += '</div><div class="card"><h3>' + t('watering.log') + '</h3>';
+    h += '<div class="form-group"><label>' + t('watering.zone') + '</label><select id="w-zone">' + zones.map(z => '<option value="' + z.id + '">' + zoneLabel(z) + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>' + t('labels.date') + '</label><input type="date" id="w-date" value="' + new Date().toISOString().slice(0,10) + '"></div>';
+    h += '<div class="form-group"><label>' + t('labels.duration') + '</label><input type="number" id="w-dur" value="15"></div>';
+    h += '<div class="form-group"><label>' + t('labels.method') + '</label><select id="w-method"><option value="дождеватель">Дождеватель</option><option value="пистолет">Пистолет</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.notes') + '</label><input id="w-notes"></div>';
+    h += '<button onclick="submitWatering()">' + t('actions.save') + '</button></div>';
+    h += '<div class="card"><h3>' + t('watering.history') + '</h3>';
     const methodOptions = ['дождеватель', 'пистолет'];
     history.slice(0, 20).forEach(e => {
         const zn = zones.find(z => z.id === e.zone_id);
@@ -343,13 +468,13 @@ async function renderWatering() {
         h += ' <button style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="toggleWateringEditor(' + e.id + ')">&#9998;</button></div>';
         if (editingWateringId === e.id) {
             h += '<div style="margin-top:10px;">';
-            h += '<div class="form-group"><label>Зона</label><select id="ew-zone">' + zones.map(z => '<option value="' + z.id + '"' + (e.zone_id === z.id ? ' selected' : '') + '>' + zoneLabel(z) + '</option>').join('') + '</select></div>';
-            h += '<div class="form-group"><label>Дата</label><input type="date" id="ew-date" value="' + e.date + '"></div>';
-            h += '<div class="form-group"><label>Длительность (мин)</label><input type="number" id="ew-dur" value="' + (e.duration_min||'') + '"></div>';
-            h += '<div class="form-group"><label>Метод</label><select id="ew-method">' + methodOptions.map(m => '<option value="' + m + '"' + (e.method === m ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>';
-            h += '<div class="form-group"><label>Заметки</label><input id="ew-notes" value="' + esc(e.notes||'') + '"></div>';
-            h += '<button onclick="saveWatering(' + e.id + ')" style="margin-right:8px;">Сохранить</button>';
-            h += '<button onclick="deleteWatering(' + e.id + ')" style="background:#c62828;">Удалить</button>';
+            h += '<div class="form-group"><label>' + t('watering.zone') + '</label><select id="ew-zone">' + zones.map(z => '<option value="' + z.id + '"' + (e.zone_id === z.id ? ' selected' : '') + '>' + zoneLabel(z) + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>' + t('labels.date') + '</label><input type="date" id="ew-date" value="' + e.date + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.duration') + '</label><input type="number" id="ew-dur" value="' + (e.duration_min||'') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.method') + '</label><select id="ew-method">' + methodOptions.map(m => '<option value="' + m + '"' + (e.method === m ? ' selected' : '') + '>' + m + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>' + t('labels.notes') + '</label><input id="ew-notes" value="' + esc(e.notes||'') + '"></div>';
+            h += '<button onclick="saveWatering(' + e.id + ')" style="margin-right:8px;">' + t('actions.save') + '</button>';
+            h += '<button onclick="deleteWatering(' + e.id + ')" style="background:#c62828;">' + t('actions.delete') + '</button>';
             h += '</div>';
         }
     });
@@ -377,7 +502,7 @@ async function saveWatering(id) {
     renderWatering();
 }
 async function deleteWatering(id) {
-    if (!confirm('Удалить запись полива?')) return;
+    if (!confirm(t('watering.deleteQuestion'))) return;
     await api('/api/watering/' + id, {method:'DELETE'});
     editingWateringId = null;
     renderWatering();
@@ -387,15 +512,15 @@ async function deleteWatering(id) {
 async function renderMowing() {
     const list = await api('/api/mowing');
     const contractors = await api('/api/contractors');
-    let h = '<h2>Покос</h2><div class="card"><h3>Записать покос</h3>';
-    h += '<div class="form-group"><label>Дата</label><input type="date" id="m-date" value="' + new Date().toISOString().slice(0,10) + '"></div>';
-    h += '<div class="form-group"><label>Подрядчик</label><select id="m-contr"><option value="">-</option>' + contractors.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('') + '</select></div>';
-    h += '<div class="form-group"><label>Качество (1-5)</label><input type="number" id="m-qual" min="1" max="5"></div>';
-    h += '<div class="form-group"><label>Заметки</label><input id="m-notes"></div>';
-    h += '<div class="form-group"><label>Фото</label><input type="file" id="m-photos" multiple accept="image/*"></div>';
-    h += '<button onclick="submitMowing()">Сохранить</button></div>';
-    h += '<div class="card"><h3>История</h3>';
-    list.slice(0, 20).forEach(e => { h += '<div class="list-item">' + e.date + ' - ' + (e.contractor_name||'?') + ' - Качество: ' + (e.quality||'?') + (e.notes ? ' (' + e.notes + ')' : '') + '</div>'; });
+    let h = '<h2>' + t('tabs.mowing') + '</h2><div class="card"><h3>' + t('actions.create') + '</h3>';
+    h += '<div class="form-group"><label>' + t('labels.date') + '</label><input type="date" id="m-date" value="' + new Date().toISOString().slice(0,10) + '"></div>';
+    h += '<div class="form-group"><label>' + t('labels.contractor') + '</label><select id="m-contr"><option value="">-</option>' + contractors.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>' + t('labels.quality') + '</label><input type="number" id="m-qual" min="1" max="5"></div>';
+    h += '<div class="form-group"><label>' + t('labels.notes') + '</label><input id="m-notes"></div>';
+    h += '<div class="form-group"><label>' + t('labels.attachments') + '</label><input type="file" id="m-photos" multiple accept="image/*"></div>';
+    h += '<button onclick="submitMowing()">' + t('actions.save') + '</button></div>';
+    h += '<div class="card"><h3>' + t('dashboard.list') + '</h3>';
+    list.slice(0, 20).forEach(e => { h += '<div class="list-item">' + e.date + ' - ' + (e.contractor_name||'?') + ' - ' + t('labels.quality') + ': ' + (e.quality||'?') + (e.notes ? ' (' + e.notes + ')' : '') + '</div>'; });
     h += '</div>';
     document.getElementById('app').innerHTML = h;
 }
@@ -415,30 +540,30 @@ async function submitMowing() {
 async function renderRequests() {
     const list = await api('/api/requests');
     const contractors = await api('/api/contractors');
-    let h = '<h2>Заявки</h2><div class="card"><h3>Новая заявка</h3>';
-    h += '<div class="form-group"><label>Название</label><input id="r-title"></div>';
-    h += '<div class="form-group"><label>Подрядчик</label><select id="r-contr"><option value="">-</option>' + contractors.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('') + '</select></div>';
-    h += '<div class="form-group"><label>Статус</label><select id="r-status"><option value="draft">Черновик</option><option value="sent">Отправлено</option><option value="waiting">Ожидание</option><option value="answered">Ответ</option><option value="closed">Закрыто</option></select></div>';
-    h += '<div class="form-group"><label>Срок</label><input type="date" id="r-due"></div>';
-    h += '<div class="form-group"><label>Описание</label><textarea id="r-summary"></textarea></div>';
-    h += '<div class="form-group"><label>Следующее действие</label><input id="r-next"></div>';
-    h += '<button onclick="submitRequest()">Создать</button></div>';
-    h += '<div class="card"><h3>Список</h3>';
+    let h = '<h2>' + t('tabs.requests') + '</h2><div class="card"><h3>' + t('requests.new') + '</h3>';
+    h += '<div class="form-group"><label>' + t('labels.title') + '</label><input id="r-title"></div>';
+    h += '<div class="form-group"><label>' + t('labels.contractor') + '</label><select id="r-contr"><option value="">-</option>' + contractors.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>' + t('labels.status') + '</label><select id="r-status"><option value="draft">' + t('requestStatusOptions.draft') + '</option><option value="sent">' + t('requestStatusOptions.sent') + '</option><option value="waiting">' + t('requestStatusOptions.waiting') + '</option><option value="answered">' + t('requestStatusOptions.answered') + '</option><option value="closed">' + t('requestStatusOptions.closed') + '</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.due') + '</label><input type="date" id="r-due"></div>';
+    h += '<div class="form-group"><label>' + t('labels.summary') + '</label><textarea id="r-summary"></textarea></div>';
+    h += '<div class="form-group"><label>' + t('labels.next') + '</label><input id="r-next"></div>';
+    h += '<button onclick="submitRequest()">' + t('actions.create') + '</button></div>';
+    h += '<div class="card"><h3>' + t('requests.list') + '</h3>';
     const sb = s => ({draft:'badge-gray',sent:'badge-blue',waiting:'badge-yellow',answered:'badge-green',closed:'badge-gray'}[s]||'badge-gray');
     const statusOptions = ['draft','sent','waiting','answered','closed'];
     list.forEach(r => {
-        h += '<div class="list-item"><b>' + esc(r.title) + '</b> <span class="badge ' + sb(r.status) + '">' + r.status + '</span><br><small>' + esc(r.contractor_name||'') + (r.due_at ? ' | Срок: ' + r.due_at : '') + '</small>';
+        h += '<div class="list-item"><b>' + esc(r.title) + '</b> <span class="badge ' + sb(r.status) + '">' + requestStatusShort(r.status) + '</span><br><small>' + esc(r.contractor_name||'') + (r.due_at ? ' | ' + t('labels.due') + ': ' + r.due_at : '') + '</small>';
         h += ' <button style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="toggleRequestEditor(' + r.id + ')">&#9998;</button>';
         if (editingRequestId === r.id) {
             h += '<div style="margin-top:10px;">';
-            h += '<div class="form-group"><label>Название</label><input id="er-title" value="' + esc(r.title) + '"></div>';
-            h += '<div class="form-group"><label>Подрядчик</label><select id="er-contr"><option value="">-</option>' + contractors.map(c => '<option value="' + c.id + '"' + (r.contractor_id === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('') + '</select></div>';
-            h += '<div class="form-group"><label>Статус</label><select id="er-status">' + statusOptions.map(s => '<option value="' + s + '"' + (r.status === s ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></div>';
-            h += '<div class="form-group"><label>Срок</label><input type="date" id="er-due" value="' + esc(r.due_at || '') + '"></div>';
-            h += '<div class="form-group"><label>Описание</label><textarea id="er-summary">' + esc(r.summary || '') + '</textarea></div>';
-            h += '<div class="form-group"><label>Следующее действие</label><input id="er-next" value="' + esc(r.next_action || '') + '"></div>';
-            h += '<button onclick="saveRequest(' + r.id + ')" style="margin-right:8px;">Сохранить</button>';
-            h += '<button onclick="deleteRequest(' + r.id + ')" style="background:#c62828;">Удалить</button>';
+            h += '<div class="form-group"><label>' + t('labels.title') + '</label><input id="er-title" value="' + esc(r.title) + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.contractor') + '</label><select id="er-contr"><option value="">-</option>' + contractors.map(c => '<option value="' + c.id + '"' + (r.contractor_id === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>' + t('labels.status') + '</label><select id="er-status">' + statusOptions.map(s => '<option value="' + s + '"' + (r.status === s ? ' selected' : '') + '>' + t('requestStatusOptions.' + s) + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>' + t('labels.due') + '</label><input type="date" id="er-due" value="' + esc(r.due_at || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.summary') + '</label><textarea id="er-summary">' + esc(r.summary || '') + '</textarea></div>';
+            h += '<div class="form-group"><label>' + t('labels.next') + '</label><input id="er-next" value="' + esc(r.next_action || '') + '"></div>';
+            h += '<button onclick="saveRequest(' + r.id + ')" style="margin-right:8px;">' + t('actions.save') + '</button>';
+            h += '<button onclick="deleteRequest(' + r.id + ')" style="background:#c62828;">' + t('actions.delete') + '</button>';
             h += '</div>';
         }
         h += '</div>';
@@ -475,7 +600,7 @@ async function saveRequest(id) {
 }
 
 async function deleteRequest(id) {
-    if (!confirm('Удалить заявку из списка? Связанные письма останутся в архиве.')) return;
+    if (!confirm(t('confirm.requestDelete'))) return;
     await api('/api/requests/' + id, {method:'DELETE'});
     editingRequestId = null;
     renderRequests();
@@ -485,18 +610,18 @@ async function deleteRequest(id) {
 async function renderEmails() {
     const list = await api('/api/emails');
     const reqs = await api('/api/requests');
-    let h = '<h2>Почта</h2>';
-    h += '<div class="card"><div class="form-group"><label>Фильтр по заявке</label><select id="e-filter" onchange="filterEmails()"><option value="">Все</option>' + reqs.map(r => '<option value="' + r.id + '">' + r.title + '</option>').join('') + '</select></div></div>';
-    h += '<div class="card"><h3>Сохранить письмо</h3>';
-    h += '<div class="form-group"><label>Заявка</label><select id="e-req"><option value="">-</option>' + reqs.map(r => '<option value="' + r.id + '">' + r.title + '</option>').join('') + '</select></div>';
-    h += '<div class="form-group"><label>Направление</label><select id="e-dir"><option value="outgoing">Исходящее</option><option value="incoming">Входящее</option></select></div>';
-    h += '<div class="form-group"><label>Отправитель</label><input id="e-sender"></div>';
-    h += '<div class="form-group"><label>Получатель</label><input id="e-recip"></div>';
-    h += '<div class="form-group"><label>Тема</label><input id="e-subj"></div>';
-    h += '<div class="form-group"><label>Текст</label><textarea id="e-body"></textarea></div>';
-    h += '<div class="form-group"><label>Вложения</label><input type="file" id="e-attach" multiple></div>';
-    h += '<button onclick="submitEmail()">Сохранить</button></div>';
-    h += '<div class="card" id="email-list"><h3>Архив</h3>';
+    let h = '<h2>' + t('tabs.emails') + '</h2>';
+    h += '<div class="card"><div class="form-group"><label>' + t('labels.filterRequest') + '</label><select id="e-filter" onchange="filterEmails()"><option value="">' + t('requests.all') + '</option>' + reqs.map(r => '<option value="' + r.id + '">' + r.title + '</option>').join('') + '</select></div></div>';
+    h += '<div class="card"><h3>' + t('actions.save') + '</h3>';
+    h += '<div class="form-group"><label>' + t('labels.request') + '</label><select id="e-req"><option value="">-</option>' + reqs.map(r => '<option value="' + r.id + '">' + r.title + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>' + t('labels.direction') + '</label><select id="e-dir"><option value="outgoing">' + directionLabel('outgoing') + '</option><option value="incoming">' + directionLabel('incoming') + '</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.sender') + '</label><input id="e-sender"></div>';
+    h += '<div class="form-group"><label>' + t('labels.recipient') + '</label><input id="e-recip"></div>';
+    h += '<div class="form-group"><label>' + t('labels.subject') + '</label><input id="e-subj"></div>';
+    h += '<div class="form-group"><label>' + t('labels.body') + '</label><textarea id="e-body"></textarea></div>';
+    h += '<div class="form-group"><label>' + t('labels.attachments') + '</label><input type="file" id="e-attach" multiple></div>';
+    h += '<button onclick="submitEmail()">' + t('actions.save') + '</button></div>';
+    h += '<div class="card" id="email-list"><h3>' + t('weather.rainGdynia') + '</h3>';
     list.slice(0, 30).forEach(e => { h += '<div class="list-item">' + (e.direction==='outgoing'?'&#8594;':'&#8592;') + ' <b>' + (e.subject||'(без темы)') + '</b><br><small>' + (e.sender||'') + ' &rarr; ' + (e.recipient||'') + ' | ' + (e.sent_at||'') + '</small></div>'; });
     h += '</div>';
     document.getElementById('app').innerHTML = h;
@@ -526,10 +651,10 @@ async function submitEmail() {
 // === EVENTS ===
 async function renderEvents() {
     const list = await api('/api/events');
-    let h = '<h2>Журнал</h2><div class="card">';
-    if(!list.length) h += '<p>Нет событий</p>';
+    let h = '<h2>' + t('tabs.events') + '</h2><div class="card">';
+    if(!list.length) h += '<p>' + t('none') + '</p>';
     list.forEach(e => {
-        const lbl = {watering:'Полив',mowing:'Покос',request:'Заявка'}[e.type] || e.type || '?';
+        const lbl = eventLabel(e.type) || e.type || '?';
         const cls = e.type==='watering'?'badge-blue':e.type==='mowing'?'badge-green':'badge-yellow';
         h += '<div class="list-item"><span class="badge ' + cls + '">' + lbl + '</span> <b>' + e.title + '</b><br><small>' + (e.date||'') + (e.description ? ' - ' + e.description : '') + '</small></div>';
     });
@@ -540,15 +665,15 @@ async function renderEvents() {
 // === USERS ===
 async function renderUsers() {
     const list = await api('/api/users');
-    let h = '<h2>Люди</h2><div class="card"><h3>Новый пользователь</h3>';
-    h += '<div class="form-group"><label>Логин</label><input id="u-username" autocomplete="off"></div>';
-    h += '<div class="form-group"><label>Имя</label><input id="u-display" autocomplete="off"></div>';
-    h += '<div class="form-group"><label>Пароль</label><input type="password" id="u-password" autocomplete="new-password"></div>';
-    h += '<div class="form-group"><label>Роль</label><select id="u-role"><option value="member">Участник</option><option value="admin">Админ</option></select></div>';
-    h += '<button onclick="submitUser()">Создать</button><p id="u-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p></div>';
-    h += '<div class="card"><h3>Список</h3>';
+    let h = '<h2>' + t('tabs.users') + '</h2><div class="card"><h3>' + t('users.new') + '</h3>';
+    h += '<div class="form-group"><label>' + t('labels.username') + '</label><input id="u-username" autocomplete="off"></div>';
+    h += '<div class="form-group"><label>' + t('labels.displayName') + '</label><input id="u-display" autocomplete="off"></div>';
+    h += '<div class="form-group"><label>' + t('labels.password') + '</label><input type="password" id="u-password" autocomplete="new-password"></div>';
+    h += '<div class="form-group"><label>' + t('labels.role') + '</label><select id="u-role"><option value="member">' + t('users.member') + '</option><option value="admin">' + t('users.admin') + '</option></select></div>';
+    h += '<button onclick="submitUser()">' + t('actions.create') + '</button><p id="u-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p></div>';
+    h += '<div class="card"><h3>' + t('users.list') + '</h3>';
     list.forEach(u => {
-        const role = u.role === 'admin' ? 'Админ' : 'Участник';
+        const role = u.role === 'admin' ? t('users.admin') : t('users.member');
         const cls = u.role === 'admin' ? 'badge-blue' : 'badge-gray';
         h += '<div class="list-item"><b>' + u.username + '</b> <span class="badge ' + cls + '">' + role + '</span><br><small>' + (u.display_name || '') + (u.active ? '' : ' | отключен') + '</small></div>';
     });
