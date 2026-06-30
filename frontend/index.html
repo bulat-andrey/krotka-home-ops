@@ -78,6 +78,7 @@
             <button onclick="showTab('watering')" id="tab-watering"><span>&#128167;</span></button>
             <button onclick="showTab('mowing')" id="tab-mowing"><span>&#127807;</span></button>
             <button onclick="showTab('requests')" id="tab-requests"><span>&#128203;</span></button>
+            <button onclick="showTab('tasks')" id="tab-tasks"><span>&#128295;</span></button>
             <button onclick="showTab('finance')" id="tab-finance"><span>&#128176;</span></button>
             <button onclick="showTab('emails')" id="tab-emails"><span>&#128231;</span></button>
             <button onclick="showTab('events')" id="tab-events"><span>&#128218;</span></button>
@@ -102,9 +103,10 @@ const I18N = {
         loginError: 'Неверный логин или пароль',
         langRu: 'RU',
         langPl: 'PL',
-        tabs: {dashboard:'Главная', zones:'Зоны', watering:'Полив', mowing:'Покос', requests:'Заявки', finance:'Финансы', emails:'Почта', events:'Журнал', users:'Люди'},
+        tabs: {dashboard:'Главная', zones:'Зоны', watering:'Полив', mowing:'Покос', requests:'Заявки', tasks:'Задачи', finance:'Финансы', emails:'Почта', events:'Журнал', users:'Люди'},
         actions: {create:'Создать', save:'Сохранить', delete:'Удалить', disable:'Отключить', enable:'Включить'},
-        labels: {code:'Код', name:'Название', type:'Тип', sun:'Солнце', notes:'Заметки', date:'Дата', duration:'Длительность (мин)', method:'Метод', status:'Статус', contractor:'Подрядчик', subject:'Тема', body:'Текст', attachments:'Вложения', filterRequest:'Фильтр по заявке', request:'Заявка', title:'Название', due:'Срок', summary:'Описание', next:'Следующее действие', role:'Роль', username:'Логин', displayName:'Имя', password:'Пароль', quality:'Качество (1-5)', direction:'Направление', sender:'Отправитель', recipient:'Получатель', vendor:'Продавец', amount:'Сумма', currency:'Валюта', category:'Категория', kind:'Тип', reimbursementStatus:'Статус компенсации', active:'Активен'},
+        labels: {code:'Код', name:'Название', type:'Тип', sun:'Солнце', notes:'Заметки', date:'Дата', duration:'Длительность (мин)', method:'Метод', status:'Статус', contractor:'Подрядчик', subject:'Тема', body:'Текст', attachments:'Вложения', filterRequest:'Фильтр по заявке', request:'Заявка', workItem:'Задача', title:'Название', due:'Срок', summary:'Описание', next:'Следующее действие', role:'Роль', username:'Логин', displayName:'Имя', password:'Пароль', quality:'Качество (1-5)', direction:'Направление', sender:'Отправитель', recipient:'Получатель', vendor:'Продавец', amount:'Сумма', currency:'Валюта', category:'Категория', kind:'Тип', reimbursementStatus:'Статус компенсации', active:'Активен', priority:'Приоритет', targetDate:'Плановая дата', estimatedCost:'Оценка стоимости'},
+        tasks: {new:'Новая задача', list:'Список задач', idea:'Идея', planned:'Запланировано', inProgress:'В работе', blocked:'Блокировано', done:'Готово', cancelled:'Отменено', low:'Низкий', medium:'Средний', high:'Высокий', requests:'Заявок', expenses:'Трат'},
         finance: {new:'Новая трата', list:'Список трат', pending:'Ожидают компенсации', private:'Личные', reimbursable:'Возмещаемые', reimbursed:'Возмещено', notNeeded:'Не нужно', request:'Заявка', recent:'Последние 30 дней', total:'Всего'},
         placeholders: {zoneCode:'W1', zoneName:'Газон у въезда', zoneNotes:'туя, самшит, склон, рядом с парковкой'},
         confirm: {zoneDisable:'Отключить эту зону? История сохранится, но зона исчезнет из активных списков.', wateringDelete:'Удалить запись полива?', requestDelete:'Удалить заявку из списка? Связанные письма останутся в архиве.'},
@@ -120,7 +122,7 @@ const I18N = {
         sunLabels: {sun:'Солнце', partial:'Полутень', shade:'Тень', mixed:'Смешано'},
         eventLabels: {watering:'Полив', mowing:'Покос', request:'Заявка'},
         directionLabels: {outgoing:'Исходящее', incoming:'Входящее'},
-        dashboard: {rain:'Дождь', recommendations:'Рекомендации', lastWatering:'Последний полив', mowing:'Покос', finance:'Финансы', openRequests:'Открытых заявок', overdue:'Просрочены', inDays:'через', daysAgo:'дн. назад', noData:'нет данных', list:'Список', wind30:'За 30 дней', archive:'Архив', errorCreateZone:'Не удалось создать зону', errorSaveZone:'Не удалось сохранить зону', errorCreateUser:'Не удалось создать пользователя', errorCreateRequest:'Не удалось создать заявку', errorSaveRequest:'Не удалось сохранить заявку', today:'Сегодня', tomorrow:'Завтра', rain3:'За 3 дня'},
+        dashboard: {rain:'Дождь', recommendations:'Рекомендации', lastWatering:'Последний полив', mowing:'Покос', tasks:'Задачи', finance:'Финансы', openRequests:'Открытых заявок', overdue:'Просрочены', inDays:'через', daysAgo:'дн. назад', noData:'нет данных', list:'Список', wind30:'За 30 дней', archive:'Архив', errorCreateZone:'Не удалось создать зону', errorSaveZone:'Не удалось сохранить зону', errorCreateUser:'Не удалось создать пользователя', errorCreateRequest:'Не удалось создать заявку', errorSaveRequest:'Не удалось сохранить заявку', today:'Сегодня', tomorrow:'Завтра', rain3:'За 3 дня'},
         mowing: {last:'Последний', next:'Следующий плановый', requestFrom:'Запрос можно отправлять с', requestReady:'Пора готовить запрос', overdue:'Покос просрочен', cycle:'дн. цикл'},
         weather: {forecastRain:'Прогноз дождя', rainGdynia:'Осадки в Гдыне', last7:'За 7 дней', last30:'за 30 дней', wind:'Ветер', nextDays:'Ближайшие дни', lastDays:'Последние дни'},
         watering: {state:'Состояние', log:'Записать полив', history:'История', zone:'Зона', noData:'нет', deleteQuestion:'Удалить запись полива?'},
@@ -135,9 +137,10 @@ const I18N = {
         loginError: 'Nieprawidłowy login lub hasło',
         langRu: 'RU',
         langPl: 'PL',
-        tabs: {dashboard:'Główna', zones:'Strefy', watering:'Podlewanie', mowing:'Koszenie', requests:'Zgłoszenia', finance:'Finanse', emails:'Poczta', events:'Dziennik', users:'Ludzie'},
+        tabs: {dashboard:'Główna', zones:'Strefy', watering:'Podlewanie', mowing:'Koszenie', requests:'Zgłoszenia', tasks:'Zadania', finance:'Finanse', emails:'Poczta', events:'Dziennik', users:'Ludzie'},
         actions: {create:'Utwórz', save:'Zapisz', delete:'Usuń', disable:'Wyłącz', enable:'Włącz'},
-        labels: {code:'Kod', name:'Nazwa', type:'Typ', sun:'Słońce', notes:'Notatki', date:'Data', duration:'Czas trwania (min)', method:'Metoda', status:'Status', contractor:'Wykonawca', subject:'Temat', body:'Treść', attachments:'Załączniki', filterRequest:'Filtr po zgłoszeniu', request:'Zgłoszenie', title:'Tytuł', due:'Termin', summary:'Opis', next:'Następne działanie', role:'Rola', username:'Login', displayName:'Imię', password:'Hasło', quality:'Jakość (1-5)', direction:'Kierunek', sender:'Nadawca', recipient:'Odbiorca', vendor:'Sprzedawca', amount:'Kwota', currency:'Waluta', category:'Kategoria', kind:'Typ', reimbursementStatus:'Status zwrotu', active:'Aktywny'},
+        labels: {code:'Kod', name:'Nazwa', type:'Typ', sun:'Słońce', notes:'Notatki', date:'Data', duration:'Czas trwania (min)', method:'Metoda', status:'Status', contractor:'Wykonawca', subject:'Temat', body:'Treść', attachments:'Załączniki', filterRequest:'Filtr po zgłoszeniu', request:'Zgłoszenie', workItem:'Zadanie', title:'Tytuł', due:'Termin', summary:'Opis', next:'Następne działanie', role:'Rola', username:'Login', displayName:'Imię', password:'Hasło', quality:'Jakość (1-5)', direction:'Kierunek', sender:'Nadawca', recipient:'Odbiorca', vendor:'Sprzedawca', amount:'Kwota', currency:'Waluta', category:'Kategoria', kind:'Typ', reimbursementStatus:'Status zwrotu', active:'Aktywny', priority:'Priorytet', targetDate:'Data planowana', estimatedCost:'Szacunkowy koszt'},
+        tasks: {new:'Nowe zadanie', list:'Lista zadań', idea:'Pomysł', planned:'Zaplanowane', inProgress:'W trakcie', blocked:'Zablokowane', done:'Gotowe', cancelled:'Anulowane', low:'Niski', medium:'Średni', high:'Wysoki', requests:'Zgłoszeń', expenses:'Wydatków'},
         finance: {new:'Nowy wydatek', list:'Lista wydatków', pending:'Czeka na zwrot', private:'Prywatne', reimbursable:'Do zwrotu', reimbursed:'Zwrócone', notNeeded:'Niepotrzebne', request:'Zgłoszenie', recent:'Ostatnie 30 dni', total:'Razem'},
         placeholders: {zoneCode:'W1', zoneName:'Trawnik przy wjeździe', zoneNotes:'tuja, bukszpan, skarpa, przy parkingu'},
         confirm: {zoneDisable:'Wyłączyć tę strefę? Historia zostanie, ale strefa zniknie z aktywnych list.', wateringDelete:'Usunąć wpis podlewania?', requestDelete:'Usunąć zgłoszenie z listy? Powiązane wiadomości zostaną w archiwum.'},
@@ -153,7 +156,7 @@ const I18N = {
         sunLabels: {sun:'Słońce', partial:'Półcień', shade:'Cień', mixed:'Mieszane'},
         eventLabels: {watering:'Podlewanie', mowing:'Koszenie', request:'Zgłoszenie'},
         directionLabels: {outgoing:'Wychodząca', incoming:'Przychodząca'},
-        dashboard: {rain:'Deszcz', recommendations:'Rekomendacje', lastWatering:'Ostatnie podlewanie', mowing:'Koszenie', finance:'Finanse', openRequests:'Otwarte zgłoszenia', overdue:'Przeterminowane', inDays:'za', daysAgo:'dni temu', noData:'brak danych', list:'Lista', wind30:'Przez 30 dni', archive:'Archiwum', errorCreateZone:'Nie udało się utworzyć strefy', errorSaveZone:'Nie udało się zapisać strefy', errorCreateUser:'Nie udało się utworzyć użytkownika', errorCreateRequest:'Nie udało się utworzyć zgłoszenia', errorSaveRequest:'Nie udało się zapisać zgłoszenia', today:'Dziś', tomorrow:'Jutro', rain3:'Za 3 dni'},
+        dashboard: {rain:'Deszcz', recommendations:'Rekomendacje', lastWatering:'Ostatnie podlewanie', mowing:'Koszenie', tasks:'Zadania', finance:'Finanse', openRequests:'Otwarte zgłoszenia', overdue:'Przeterminowane', inDays:'za', daysAgo:'dni temu', noData:'brak danych', list:'Lista', wind30:'Przez 30 dni', archive:'Archiwum', errorCreateZone:'Nie udało się utworzyć strefy', errorSaveZone:'Nie udało się zapisać strefy', errorCreateUser:'Nie udało się utworzyć użytkownika', errorCreateRequest:'Nie udało się utworzyć zgłoszenia', errorSaveRequest:'Nie udało się zapisać zgłoszenia', today:'Dziś', tomorrow:'Jutro', rain3:'Za 3 dni'},
         mowing: {last:'Ostatnie', next:'Następne planowane', requestFrom:'Zgłoszenie można wysłać od', requestReady:'Czas przygotować zgłoszenie', overdue:'Koszenie jest po terminie', cycle:'d. cykl'},
         weather: {forecastRain:'Prognoza deszczu', rainGdynia:'Opady w Gdyni', last7:'Ostatnie 7 dni', last30:'ostatnie 30 dni', wind:'Wiatr', nextDays:'Najbliższe dni', lastDays:'Ostatnie dni'},
         watering: {state:'Stan', log:'Zapisz podlewanie', history:'Historia', zone:'Strefa', noData:'brak', deleteQuestion:'Usunąć wpis podlewania?'},
@@ -196,6 +199,7 @@ function renderStaticLabels() {
     document.getElementById('tab-watering').innerHTML = '<span>&#128167;</span>' + t('tabs.watering');
     document.getElementById('tab-mowing').innerHTML = '<span>&#127807;</span>' + t('tabs.mowing');
     document.getElementById('tab-requests').innerHTML = '<span>&#128203;</span>' + t('tabs.requests');
+    document.getElementById('tab-tasks').innerHTML = '<span>&#128295;</span>' + t('tabs.tasks');
     document.getElementById('tab-finance').innerHTML = '<span>&#128176;</span>' + t('tabs.finance');
     document.getElementById('tab-emails').innerHTML = '<span>&#128231;</span>' + t('tabs.emails');
     document.getElementById('tab-events').innerHTML = '<span>&#128218;</span>' + t('tabs.events');
@@ -209,6 +213,14 @@ function requestStatusShort(v) { return t('requestStatusShort.' + v) || v || '';
 function eventLabel(v) { return t('eventLabels.' + v) || v || ''; }
 function directionLabel(v) { return t('directionLabels.' + v) || v || ''; }
 function recStatusLabel(v) { return t('recStatus.' + v) || v || ''; }
+function workStatusLabel(v) {
+    const key = ({idea:'idea', planned:'planned', in_progress:'inProgress', blocked:'blocked', done:'done', cancelled:'cancelled'}[v || 'idea']) || 'idea';
+    return t('tasks.' + key) || v || '';
+}
+function workPriorityLabel(v) { return t('tasks.' + (v || 'medium')) || v || ''; }
+function workBadgeClass(v) {
+    return ({idea:'badge-gray', planned:'badge-yellow', in_progress:'badge-blue', blocked:'badge-red', done:'badge-green', cancelled:'badge-gray'}[v || 'idea']) || 'badge-gray';
+}
 function translateRecommendationReason(reason) {
     if (!reason) return '';
     if (LANG !== 'pl') return reason;
@@ -324,7 +336,7 @@ function showTab(tab) {
     currentTab = tab;
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
-    ({dashboard: renderDashboard, zones: renderZones, watering: renderWatering, mowing: renderMowing, requests: renderRequests, finance: renderFinance, emails: renderEmails, events: renderEvents, users: renderUsers})[tab]();
+    ({dashboard: renderDashboard, zones: renderZones, watering: renderWatering, mowing: renderMowing, requests: renderRequests, tasks: renderTasks, finance: renderFinance, emails: renderEmails, events: renderEvents, users: renderUsers})[tab]();
 }
 
 // === DASHBOARD ===
@@ -364,6 +376,14 @@ async function renderDashboard() {
         h += '<div class="card"><h3>' + t('dashboard.finance') + '</h3>';
         h += '<div class="list-item">' + financeSummaryLabel('pending') + ': <b>' + (d.finance.pending.count || 0) + '</b> / <b>' + Number(d.finance.pending.total || 0).toFixed(2) + '</b> PLN</div>';
         h += '<div class="list-item">' + financeSummaryLabel('recent') + ': <b>' + (d.finance.recent_30d.count || 0) + '</b> / <b>' + Number(d.finance.recent_30d.total || 0).toFixed(2) + '</b> PLN</div>';
+        h += '</div>';
+    }
+    if (d.work_items) {
+        h += '<div class="card"><h3>' + t('dashboard.tasks') + '</h3>';
+        h += '<div class="list-item">' + (LANG === 'pl' ? 'aktywne' : 'Активных') + ': <b>' + (d.work_items.open.count || 0) + '</b></div>';
+        (d.work_items.recent || []).forEach(w => {
+            h += '<div class="list-item"><b>' + esc(w.title) + '</b> <span class="badge badge-gray">' + workStatusLabel(w.status) + '</span><br><small>' + (w.priority ? workPriorityLabel(w.priority) : '') + (w.target_date ? ' | ' + w.target_date : '') + ' | ' + (w.request_count || 0) + ' ' + t('tasks.requests') + ' | ' + (w.expense_count || 0) + ' ' + t('tasks.expenses') + '</small></div>';
+        });
         h += '</div>';
     }
     if (d.recommendations && d.recommendations.length) {
@@ -601,9 +621,11 @@ async function submitMowing() {
 async function renderRequests() {
     const list = await api('/api/requests');
     const contractors = await api('/api/contractors');
+    const workItems = await api('/api/workitems');
     let h = '<h2>' + t('tabs.requests') + '</h2><div class="card"><h3>' + t('requests.new') + '</h3>';
     h += '<div class="form-group"><label>' + t('labels.title') + '</label><input id="r-title"></div>';
     h += '<div class="form-group"><label>' + t('labels.contractor') + '</label><select id="r-contr"><option value="">-</option>' + contractors.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>' + t('labels.workItem') + '</label><select id="r-work"><option value="">-</option>' + workItems.map(w => '<option value="' + w.id + '">' + esc(w.title) + '</option>').join('') + '</select></div>';
     h += '<div class="form-group"><label>' + t('labels.status') + '</label><select id="r-status"><option value="draft">' + t('requestStatusOptions.draft') + '</option><option value="sent">' + t('requestStatusOptions.sent') + '</option><option value="waiting">' + t('requestStatusOptions.waiting') + '</option><option value="answered">' + t('requestStatusOptions.answered') + '</option><option value="closed">' + t('requestStatusOptions.closed') + '</option></select></div>';
     h += '<div class="form-group"><label>' + t('labels.due') + '</label><input type="date" id="r-due"></div>';
     h += '<div class="form-group"><label>' + t('labels.summary') + '</label><textarea id="r-summary"></textarea></div>';
@@ -613,12 +635,13 @@ async function renderRequests() {
     const sb = s => ({draft:'badge-gray',sent:'badge-blue',waiting:'badge-yellow',answered:'badge-green',closed:'badge-gray'}[s]||'badge-gray');
     const statusOptions = ['draft','sent','waiting','answered','closed'];
     list.forEach(r => {
-        h += '<div class="list-item"><b>' + esc(r.title) + '</b> <span class="badge ' + sb(r.status) + '">' + requestStatusShort(r.status) + '</span><br><small>' + esc(r.contractor_name||'') + (r.due_at ? ' | ' + t('labels.due') + ': ' + r.due_at : '') + '</small>';
+        h += '<div class="list-item"><b>' + esc(r.title) + '</b> <span class="badge ' + sb(r.status) + '">' + requestStatusShort(r.status) + '</span><br><small>' + esc(r.contractor_name||'') + (r.work_item_title ? ' | ' + esc(r.work_item_title) : '') + (r.due_at ? ' | ' + t('labels.due') + ': ' + r.due_at : '') + '</small>';
         h += ' <button style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="toggleRequestEditor(' + r.id + ')">&#9998;</button>';
         if (editingRequestId === r.id) {
             h += '<div style="margin-top:10px;">';
             h += '<div class="form-group"><label>' + t('labels.title') + '</label><input id="er-title" value="' + esc(r.title) + '"></div>';
             h += '<div class="form-group"><label>' + t('labels.contractor') + '</label><select id="er-contr"><option value="">-</option>' + contractors.map(c => '<option value="' + c.id + '"' + (r.contractor_id === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>' + t('labels.workItem') + '</label><select id="er-work"><option value="">-</option>' + workItems.map(w => '<option value="' + w.id + '"' + (r.work_item_id === w.id ? ' selected' : '') + '>' + esc(w.title) + '</option>').join('') + '</select></div>';
             h += '<div class="form-group"><label>' + t('labels.status') + '</label><select id="er-status">' + statusOptions.map(s => '<option value="' + s + '"' + (r.status === s ? ' selected' : '') + '>' + t('requestStatusOptions.' + s) + '</option>').join('') + '</select></div>';
             h += '<div class="form-group"><label>' + t('labels.due') + '</label><input type="date" id="er-due" value="' + esc(r.due_at || '') + '"></div>';
             h += '<div class="form-group"><label>' + t('labels.summary') + '</label><textarea id="er-summary">' + esc(r.summary || '') + '</textarea></div>';
@@ -635,6 +658,7 @@ async function renderRequests() {
 async function submitRequest() {
     const data = {title: document.getElementById('r-title').value, status: document.getElementById('r-status').value};
     const c = document.getElementById('r-contr').value; if(c) data.contractor_id = +c;
+    const w = document.getElementById('r-work').value; if(w) data.work_item_id = +w;
     const d = document.getElementById('r-due').value; if(d) data.due_at = d;
     const s = document.getElementById('r-summary').value; if(s) data.summary = s;
     const n = document.getElementById('r-next').value; if(n) data.next_action = n;
@@ -651,6 +675,7 @@ async function saveRequest(id) {
         title: document.getElementById('er-title').value,
         status: document.getElementById('er-status').value,
         contractor_id: document.getElementById('er-contr').value ? +document.getElementById('er-contr').value : null,
+        work_item_id: document.getElementById('er-work').value ? +document.getElementById('er-work').value : null,
         due_at: document.getElementById('er-due').value || null,
         summary: document.getElementById('er-summary').value || null,
         next_action: document.getElementById('er-next').value || null
@@ -680,6 +705,7 @@ function financeBadgeClass(kind, status) {
 async function renderFinance() {
     const list = await api('/api/expenses');
     const requests = await api('/api/requests');
+    const workItems = await api('/api/workitems');
     const today = new Date().toISOString().slice(0, 10);
     let h = '<h2>' + t('tabs.finance') + '</h2><div class="card"><h3>' + t('finance.new') + '</h3>';
     h += '<div class="form-group"><label>' + t('labels.date') + '</label><input type="date" id="x-date" value="' + today + '"></div>';
@@ -690,6 +716,7 @@ async function renderFinance() {
     h += '<div class="form-group"><label>' + t('labels.category') + '</label><input id="x-category"></div>';
     h += '<div class="form-group"><label>' + t('labels.kind') + '</label><select id="x-kind"><option value="reimbursable">' + financeSummaryLabel('reimbursable') + '</option><option value="private">' + financeSummaryLabel('private') + '</option></select></div>';
     h += '<div class="form-group"><label>' + t('labels.reimbursementStatus') + '</label><select id="x-status"><option value="pending">' + financeSummaryLabel('pending') + '</option><option value="reimbursed">' + financeSummaryLabel('reimbursed') + '</option><option value="not_needed">' + financeSummaryLabel('notNeeded') + '</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.workItem') + '</label><select id="x-work"><option value="">-</option>' + workItems.map(w => '<option value="' + w.id + '">' + esc(w.title) + '</option>').join('') + '</select></div>';
     h += '<div class="form-group"><label>' + t('labels.request') + '</label><select id="x-request"><option value="">-</option>' + requests.map(r => '<option value="' + r.id + '">' + esc(r.title) + '</option>').join('') + '</select></div>';
     h += '<div class="form-group"><label>' + t('labels.notes') + '</label><textarea id="x-notes"></textarea></div>';
     h += '<div class="form-group"><label>' + t('labels.attachments') + '</label><input type="file" id="x-files" multiple accept="image/*,application/pdf"></div>';
@@ -700,7 +727,7 @@ async function renderFinance() {
         const kindCls = e.kind === 'private' ? 'badge-gray' : 'badge-blue';
         const statusCls = financeBadgeClass(e.kind, e.reimbursement_status);
         h += '<div class="list-item"><b>' + esc(e.title) + '</b> <span class="badge ' + kindCls + '">' + financeSummaryLabel(e.kind === 'private' ? 'private' : 'reimbursable') + '</span> <span class="badge ' + statusCls + '">' + financeStatusLabel(e.reimbursement_status) + '</span><br>';
-        h += '<small>' + e.date + ' | ' + amount + (e.vendor ? ' | ' + esc(e.vendor) : '') + (e.category ? ' | ' + esc(e.category) : '') + (e.request_title ? ' | ' + financeRequestLabel(true) + ': ' + esc(e.request_title) : '') + '</small>';
+        h += '<small>' + e.date + ' | ' + amount + (e.vendor ? ' | ' + esc(e.vendor) : '') + (e.category ? ' | ' + esc(e.category) : '') + (e.work_item_title ? ' | ' + esc(e.work_item_title) : '') + (e.request_title ? ' | ' + financeRequestLabel(true) + ': ' + esc(e.request_title) : '') + '</small>';
         if (e.notes) h += '<br><small>' + esc(e.notes) + '</small>';
         if (e.attachments && e.attachments.length) {
             h += '<br><small>' + e.attachments.map(a => '<a href="/uploads/' + encodeURIComponent(a) + '" target="_blank" rel="noopener">' + esc(a) + '</a>').join(' | ') + '</small>';
@@ -716,6 +743,7 @@ async function renderFinance() {
             h += '<div class="form-group"><label>' + t('labels.category') + '</label><input id="xe-category" value="' + esc(e.category || '') + '"></div>';
             h += '<div class="form-group"><label>' + t('labels.kind') + '</label><select id="xe-kind"><option value="reimbursable"' + (e.kind === 'reimbursable' ? ' selected' : '') + '>' + financeSummaryLabel('reimbursable') + '</option><option value="private"' + (e.kind === 'private' ? ' selected' : '') + '>' + financeSummaryLabel('private') + '</option></select></div>';
             h += '<div class="form-group"><label>' + t('labels.reimbursementStatus') + '</label><select id="xe-status"><option value="pending"' + (e.reimbursement_status === 'pending' ? ' selected' : '') + '>' + financeSummaryLabel('pending') + '</option><option value="reimbursed"' + (e.reimbursement_status === 'reimbursed' ? ' selected' : '') + '>' + financeSummaryLabel('reimbursed') + '</option><option value="not_needed"' + (e.reimbursement_status === 'not_needed' ? ' selected' : '') + '>' + financeSummaryLabel('notNeeded') + '</option></select></div>';
+            h += '<div class="form-group"><label>' + t('labels.workItem') + '</label><select id="xe-work"><option value="">-</option>' + workItems.map(w => '<option value="' + w.id + '"' + (e.work_item_id === w.id ? ' selected' : '') + '>' + esc(w.title) + '</option>').join('') + '</select></div>';
             h += '<div class="form-group"><label>' + t('labels.request') + '</label><select id="xe-request"><option value="">-</option>' + requests.map(r => '<option value="' + r.id + '"' + (Number(e.request_id) === Number(r.id) ? ' selected' : '') + '>' + esc(r.title) + '</option>').join('') + '</select></div>';
             h += '<div class="form-group"><label>' + t('labels.notes') + '</label><textarea id="xe-notes">' + esc(e.notes || '') + '</textarea></div>';
             h += '<div class="form-group"><label>' + t('labels.attachments') + '</label><input type="file" id="xe-files" multiple accept="image/*,application/pdf"></div>';
@@ -741,6 +769,7 @@ async function submitExpense() {
     const category = document.getElementById('x-category').value.trim(); if (category) fd.append('category', category);
     fd.append('kind', document.getElementById('x-kind').value);
     fd.append('reimbursement_status', document.getElementById('x-status').value);
+    const work = document.getElementById('x-work').value; if (work) fd.append('work_item_id', work);
     const req = document.getElementById('x-request').value; if (req) fd.append('request_id', req);
     const notes = document.getElementById('x-notes').value.trim(); if (notes) fd.append('notes', notes);
     const files = document.getElementById('x-files').files;
@@ -769,6 +798,7 @@ async function saveExpense(id) {
     const category = document.getElementById('xe-category').value.trim(); if (category) fd.append('category', category);
     fd.append('kind', document.getElementById('xe-kind').value);
     fd.append('reimbursement_status', document.getElementById('xe-status').value);
+    const work = document.getElementById('xe-work').value; if (work) fd.append('work_item_id', work);
     const req = document.getElementById('xe-request').value; if (req) fd.append('request_id', req);
     const notes = document.getElementById('xe-notes').value.trim(); if (notes) fd.append('notes', notes);
     const files = document.getElementById('xe-files').files;
@@ -783,6 +813,93 @@ async function deleteExpense(id) {
     await api('/api/expenses/' + id, {method:'DELETE'});
     editingExpenseId = null;
     renderFinance();
+}
+
+// === TASKS ===
+let editingTaskId = null;
+
+async function renderTasks() {
+    const list = await api('/api/workitems');
+    let h = '<h2>' + t('tabs.tasks') + '</h2><div class="card"><h3>' + t('tasks.new') + '</h3>';
+    h += '<div class="form-group"><label>' + t('labels.title') + '</label><input id="t-title"></div>';
+    h += '<div class="form-group"><label>' + t('labels.category') + '</label><input id="t-category"></div>';
+    h += '<div class="form-group"><label>' + t('labels.status') + '</label><select id="t-status"><option value="idea">' + workStatusLabel('idea') + '</option><option value="planned">' + workStatusLabel('planned') + '</option><option value="in_progress">' + workStatusLabel('in_progress') + '</option><option value="blocked">' + workStatusLabel('blocked') + '</option><option value="done">' + workStatusLabel('done') + '</option><option value="cancelled">' + workStatusLabel('cancelled') + '</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.priority') + '</label><select id="t-priority"><option value="low">' + workPriorityLabel('low') + '</option><option value="medium" selected>' + workPriorityLabel('medium') + '</option><option value="high">' + workPriorityLabel('high') + '</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.targetDate') + '</label><input type="date" id="t-target"></div>';
+    h += '<div class="form-group"><label>' + t('labels.estimatedCost') + '</label><input type="number" step="0.01" id="t-cost"></div>';
+    h += '<div class="form-group"><label>' + t('labels.notes') + '</label><textarea id="t-notes"></textarea></div>';
+    h += '<button onclick="submitTask()">' + t('actions.create') + '</button><p id="t-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p></div>';
+    h += '<div class="card"><h3>' + t('tasks.list') + '</h3>';
+    list.forEach(w => {
+        const cls = workBadgeClass(w.status);
+        h += '<div class="list-item"><b>' + esc(w.title) + '</b> <span class="badge ' + cls + '">' + workStatusLabel(w.status) + '</span> <span class="badge badge-gray">' + workPriorityLabel(w.priority) + '</span><br>';
+        h += '<small>' + (w.category ? esc(w.category) : '') + (w.target_date ? ' | ' + w.target_date : '') + (w.estimated_cost != null ? ' | ' + Number(w.estimated_cost).toFixed(2) + ' PLN' : '') + ' | ' + (w.request_count || 0) + ' ' + t('tasks.requests') + ' | ' + (w.expense_count || 0) + ' ' + t('tasks.expenses') + '</small><br>';
+        h += '<button style="padding:4px 8px;font-size:12px;min-height:auto;margin-top:6px;" onclick="toggleTaskEditor(' + w.id + ')">&#9998;</button></div>';
+        if (editingTaskId === w.id) {
+            h += '<div style="margin-top:10px;">';
+            h += '<div class="form-group"><label>' + t('labels.title') + '</label><input id="et-title" value="' + esc(w.title || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.category') + '</label><input id="et-category" value="' + esc(w.category || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.status') + '</label><select id="et-status"><option value="idea"' + (w.status === 'idea' ? ' selected' : '') + '>' + workStatusLabel('idea') + '</option><option value="planned"' + (w.status === 'planned' ? ' selected' : '') + '>' + workStatusLabel('planned') + '</option><option value="in_progress"' + (w.status === 'in_progress' ? ' selected' : '') + '>' + workStatusLabel('in_progress') + '</option><option value="blocked"' + (w.status === 'blocked' ? ' selected' : '') + '>' + workStatusLabel('blocked') + '</option><option value="done"' + (w.status === 'done' ? ' selected' : '') + '>' + workStatusLabel('done') + '</option><option value="cancelled"' + (w.status === 'cancelled' ? ' selected' : '') + '>' + workStatusLabel('cancelled') + '</option></select></div>';
+            h += '<div class="form-group"><label>' + t('labels.priority') + '</label><select id="et-priority"><option value="low"' + (w.priority === 'low' ? ' selected' : '') + '>' + workPriorityLabel('low') + '</option><option value="medium"' + (w.priority === 'medium' ? ' selected' : '') + '>' + workPriorityLabel('medium') + '</option><option value="high"' + (w.priority === 'high' ? ' selected' : '') + '>' + workPriorityLabel('high') + '</option></select></div>';
+            h += '<div class="form-group"><label>' + t('labels.targetDate') + '</label><input type="date" id="et-target" value="' + esc(w.target_date || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.estimatedCost') + '</label><input type="number" step="0.01" id="et-cost" value="' + esc(w.estimated_cost || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.notes') + '</label><textarea id="et-notes">' + esc(w.notes || '') + '</textarea></div>';
+            h += '<button onclick="saveTask(' + w.id + ')" style="margin-right:8px;">' + t('actions.save') + '</button>';
+            h += '<button onclick="deleteTask(' + w.id + ')" style="background:#c62828;">' + t('actions.delete') + '</button>';
+            h += '</div>';
+        }
+    });
+    h += '</div>';
+    document.getElementById('app').innerHTML = h;
+}
+
+function toggleTaskEditor(id) {
+    editingTaskId = editingTaskId === id ? null : id;
+    renderTasks();
+}
+
+async function submitTask() {
+    const err = document.getElementById('t-error');
+    err.classList.add('hidden');
+    const data = {
+        title: document.getElementById('t-title').value.trim(),
+        category: document.getElementById('t-category').value.trim() || null,
+        status: document.getElementById('t-status').value,
+        priority: document.getElementById('t-priority').value,
+        target_date: document.getElementById('t-target').value || null,
+        estimated_cost: document.getElementById('t-cost').value ? +document.getElementById('t-cost').value : null,
+        notes: document.getElementById('t-notes').value.trim() || null
+    };
+    const r = await fetch('/api/workitems', {method:'POST', headers: authHeaders(), body: JSON.stringify(data)});
+    if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        err.textContent = body.detail || (LANG === 'pl' ? 'Nie udało się dodać zadania' : 'Не удалось добавить задачу');
+        err.classList.remove('hidden');
+        return;
+    }
+    renderTasks();
+}
+
+async function saveTask(id) {
+    const data = {
+        title: document.getElementById('et-title').value.trim(),
+        category: document.getElementById('et-category').value.trim() || null,
+        status: document.getElementById('et-status').value,
+        priority: document.getElementById('et-priority').value,
+        target_date: document.getElementById('et-target').value || null,
+        estimated_cost: document.getElementById('et-cost').value ? +document.getElementById('et-cost').value : null,
+        notes: document.getElementById('et-notes').value.trim() || null
+    };
+    await api('/api/workitems/' + id, {method:'PUT', body: JSON.stringify(data)});
+    editingTaskId = null;
+    renderTasks();
+}
+
+async function deleteTask(id) {
+    if (!confirm(LANG === 'pl' ? 'Usunąć zadanie?' : 'Удалить задачу?')) return;
+    await api('/api/workitems/' + id, {method:'DELETE'});
+    editingTaskId = null;
+    renderTasks();
 }
 
 // === EMAILS ===

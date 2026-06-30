@@ -73,6 +73,7 @@ from routers.recommendations import router as recommendations_router  # noqa: E4
 from routers.dashboard import router as dashboard_router  # noqa: E402
 from routers.users import router as users_router  # noqa: E402
 from routers.finance import router as finance_router  # noqa: E402
+from routers.workitems import router as workitems_router  # noqa: E402
 
 app.include_router(mowing_router)
 app.include_router(requests_router)
@@ -83,6 +84,7 @@ app.include_router(recommendations_router)
 app.include_router(dashboard_router)
 app.include_router(users_router)
 app.include_router(finance_router)
+app.include_router(workitems_router)
 
 # Mount frontend static files (after API routes so /api/* takes priority)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
