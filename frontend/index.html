@@ -25,7 +25,7 @@
         .alert{background:#fff3e0;border-left:4px solid #ff9800;padding:10px;margin-bottom:10px;border-radius:4px;font-size:14px}
         .alert-red{background:#fbe9e7;border-left-color:#f44336}
         #app{flex:1;padding:12px;padding-bottom:70px}
-        nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:flex-start;max-width:480px;margin:0 auto;z-index:100;overflow-x:auto}
+        nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:flex-start;max-width:480px;margin:0 auto;z-index:100;overflow-x:auto;transform:translateZ(0)}
         nav button{background:none;color:#666;font-size:11px;padding:8px 4px;border-radius:0;min-height:50px;flex:0 0 60px;display:flex;flex-direction:column;align-items:center;gap:2px}
         nav button.active{color:#2196F3}
         nav button span{font-size:20px}
@@ -43,7 +43,8 @@
         .zone-icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;color:#2e7d32}
         .zone-icon svg{width:18px;height:18px;display:block;fill:currentColor}
         @media (max-width: 640px) {
-            #app{padding-bottom:84px}
+            #app{padding-bottom:112px}
+            nav{bottom:env(safe-area-inset-bottom, 0px)}
         }
     </style>
 </head>
