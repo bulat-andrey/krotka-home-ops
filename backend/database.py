@@ -139,6 +139,22 @@ def init_db():
             contractor_id INTEGER REFERENCES contractors(id)
         );
 
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            title TEXT NOT NULL,
+            vendor TEXT,
+            amount REAL NOT NULL,
+            currency TEXT NOT NULL DEFAULT 'PLN',
+            category TEXT,
+            kind TEXT NOT NULL DEFAULT 'reimbursable',
+            reimbursement_status TEXT NOT NULL DEFAULT 'pending',
+            request_id INTEGER REFERENCES requests(id),
+            notes TEXT,
+            attachments TEXT,
+            deleted_at TEXT
+        );
+
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL UNIQUE,
@@ -154,10 +170,21 @@ def init_db():
     _ensure_column(conn, "zones", "active", "INTEGER NOT NULL DEFAULT 1")
     _rebuild_zones_without_name_unique(conn)
     _ensure_column(conn, "requests", "deleted_at", "TEXT")
+    _ensure_column(conn, "expenses", "vendor", "TEXT")
+    _ensure_column(conn, "expenses", "currency", "TEXT NOT NULL DEFAULT 'PLN'")
+    _ensure_column(conn, "expenses", "category", "TEXT")
+    _ensure_column(conn, "expenses", "kind", "TEXT NOT NULL DEFAULT 'reimbursable'")
+    _ensure_column(conn, "expenses", "reimbursement_status", "TEXT NOT NULL DEFAULT 'pending'")
+    _ensure_column(conn, "expenses", "request_id", "INTEGER REFERENCES requests(id)")
+    _ensure_column(conn, "expenses", "notes", "TEXT")
+    _ensure_column(conn, "expenses", "attachments", "TEXT")
+    _ensure_column(conn, "expenses", "deleted_at", "TEXT")
     conn.execute(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_zones_code ON zones(code) WHERE code IS NOT NULL AND code != ''"
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_wind_hourly_date ON wind_hourly(date)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_expenses_deleted ON expenses(deleted_at)")
 
     # Seed zones
     zones = [

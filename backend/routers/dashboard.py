@@ -173,6 +173,18 @@ def dashboard():
         (WIND_THRESHOLD_KT, today_str),
     ).fetchall()
 
+    finance_pending = db.execute(
+        """SELECT COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total
+           FROM expenses
+           WHERE deleted_at IS NULL AND kind = 'reimbursable' AND reimbursement_status = 'pending'""",
+    ).fetchone()
+    finance_recent = db.execute(
+        """SELECT COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total
+           FROM expenses
+           WHERE deleted_at IS NULL AND date >= ?""",
+        ((today - timedelta(days=30)).isoformat(),),
+    ).fetchone()
+
     db.close()
     return {
         "recommendations": recommendations,
@@ -186,6 +198,10 @@ def dashboard():
             "windy_days_30d": windy_days_30d,
             "history": [dict(r) for r in wind_history],
             "forecast": [dict(r) for r in wind_forecast],
+        },
+        "finance": {
+            "pending": {"count": finance_pending["cnt"], "total": finance_pending["total"]},
+            "recent_30d": {"count": finance_recent["cnt"], "total": finance_recent["total"]},
         },
         "open_requests": open_count,
         "overdue_responses": overdue_responses,

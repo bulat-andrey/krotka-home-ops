@@ -6,7 +6,7 @@
     <title>Krotka Home Ops</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;color:#333;max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;color:#333;margin:0;min-height:100vh}
         .hidden{display:none!important}
         button,input,select,textarea{font-size:16px}
         button{padding:12px 20px;border:none;border-radius:8px;background:#2196F3;color:#fff;cursor:pointer;min-height:44px}
@@ -24,8 +24,10 @@
         h3{margin-bottom:8px;font-size:15px;color:#555}
         .alert{background:#fff3e0;border-left:4px solid #ff9800;padding:10px;margin-bottom:10px;border-radius:4px;font-size:14px}
         .alert-red{background:#fbe9e7;border-left-color:#f44336}
+        #shell{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
         #app{flex:1;padding:12px;padding-bottom:70px}
-        nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #ddd;display:flex;justify-content:flex-start;max-width:480px;margin:0 auto;z-index:100;overflow-x:auto;transform:translateZ(0)}
+        nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #ddd;z-index:1000}
+        .nav-inner{max-width:480px;margin:0 auto;display:flex;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch}
         nav button{background:none;color:#666;font-size:11px;padding:8px 4px;border-radius:0;min-height:50px;flex:0 0 60px;display:flex;flex-direction:column;align-items:center;gap:2px}
         nav button.active{color:#2196F3}
         nav button span{font-size:20px}
@@ -39,12 +41,13 @@
         .lang-switch{display:flex;gap:8px;justify-content:flex-end;margin-bottom:10px}
         .lang-switch button{padding:8px 12px;min-height:auto;font-size:13px;background:#eceff1;color:#455a64}
         .lang-switch button.active{background:#2196F3;color:#fff}
+        .toolbar-row{display:flex;align-items:center;justify-content:flex-end;gap:12px}
         .rec-head{display:flex;align-items:center;gap:8px;min-width:0}
         .zone-icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;color:#2e7d32}
         .zone-icon svg{width:18px;height:18px;display:block;fill:currentColor}
         @media (max-width: 640px) {
             #app{padding-bottom:112px}
-            nav{bottom:env(safe-area-inset-bottom, 0px)}
+            nav{padding-bottom:env(safe-area-inset-bottom, 0px)}
         }
     </style>
 </head>
@@ -62,17 +65,22 @@
 </div>
 
 <div id="main-app" class="hidden">
-    <div id="app-toolbar" style="padding:12px 12px 0 12px;"></div>
-    <div id="app"></div>
+    <div id="shell">
+        <div id="app-toolbar" style="padding:12px 12px 0 12px;"></div>
+        <div id="app"></div>
+    </div>
     <nav>
-        <button onclick="showTab('dashboard')" id="tab-dashboard"><span>&#127968;</span></button>
-        <button onclick="showTab('zones')" id="tab-zones"><span>&#128205;</span></button>
-        <button onclick="showTab('watering')" id="tab-watering"><span>&#128167;</span></button>
-        <button onclick="showTab('mowing')" id="tab-mowing"><span>&#127807;</span></button>
-        <button onclick="showTab('requests')" id="tab-requests"><span>&#128203;</span></button>
-        <button onclick="showTab('emails')" id="tab-emails"><span>&#128231;</span></button>
-        <button onclick="showTab('events')" id="tab-events"><span>&#128218;</span></button>
-        <button onclick="showTab('users')" id="tab-users" class="hidden"><span>&#128101;</span></button>
+        <div class="nav-inner">
+            <button onclick="showTab('dashboard')" id="tab-dashboard"><span>&#127968;</span></button>
+            <button onclick="showTab('zones')" id="tab-zones"><span>&#128205;</span></button>
+            <button onclick="showTab('watering')" id="tab-watering"><span>&#128167;</span></button>
+            <button onclick="showTab('mowing')" id="tab-mowing"><span>&#127807;</span></button>
+            <button onclick="showTab('requests')" id="tab-requests"><span>&#128203;</span></button>
+            <button onclick="showTab('finance')" id="tab-finance"><span>&#128176;</span></button>
+            <button onclick="showTab('emails')" id="tab-emails"><span>&#128231;</span></button>
+            <button onclick="showTab('events')" id="tab-events"><span>&#128218;</span></button>
+            <button onclick="showTab('users')" id="tab-users" class="hidden"><span>&#128101;</span></button>
+        </div>
     </nav>
 </div>
 
@@ -91,9 +99,10 @@ const I18N = {
         loginError: 'Неверный логин или пароль',
         langRu: 'RU',
         langPl: 'PL',
-        tabs: {dashboard:'Главная', zones:'Зоны', watering:'Полив', mowing:'Покос', requests:'Заявки', emails:'Почта', events:'Журнал', users:'Люди'},
+        tabs: {dashboard:'Главная', zones:'Зоны', watering:'Полив', mowing:'Покос', requests:'Заявки', finance:'Финансы', emails:'Почта', events:'Журнал', users:'Люди'},
         actions: {create:'Создать', save:'Сохранить', delete:'Удалить', disable:'Отключить'},
-        labels: {code:'Код', name:'Название', type:'Тип', sun:'Солнце', notes:'Заметки', date:'Дата', duration:'Длительность (мин)', method:'Метод', status:'Статус', contractor:'Подрядчик', subject:'Тема', body:'Текст', attachments:'Вложения', filterRequest:'Фильтр по заявке', request:'Заявка', title:'Название', due:'Срок', summary:'Описание', next:'Следующее действие', role:'Роль', username:'Логин', displayName:'Имя', password:'Пароль', quality:'Качество (1-5)', direction:'Направление', sender:'Отправитель', recipient:'Получатель'},
+        labels: {code:'Код', name:'Название', type:'Тип', sun:'Солнце', notes:'Заметки', date:'Дата', duration:'Длительность (мин)', method:'Метод', status:'Статус', contractor:'Подрядчик', subject:'Тема', body:'Текст', attachments:'Вложения', filterRequest:'Фильтр по заявке', request:'Заявка', title:'Название', due:'Срок', summary:'Описание', next:'Следующее действие', role:'Роль', username:'Логин', displayName:'Имя', password:'Пароль', quality:'Качество (1-5)', direction:'Направление', sender:'Отправитель', recipient:'Получатель', vendor:'Продавец', amount:'Сумма', currency:'Валюта', category:'Категория', kind:'Тип', reimbursementStatus:'Статус компенсации'},
+        finance: {new:'Новая трата', list:'Список трат', pending:'Ожидают компенсации', private:'Личные', reimbursable:'Возмещаемые', reimbursed:'Возмещено', notNeeded:'Не нужно', request:'Заявка', recent:'Последние 30 дней', total:'Всего'},
         placeholders: {zoneCode:'W1', zoneName:'Газон у въезда', zoneNotes:'туя, самшит, склон, рядом с парковкой'},
         confirm: {zoneDisable:'Отключить эту зону? История сохранится, но зона исчезнет из активных списков.', wateringDelete:'Удалить запись полива?', requestDelete:'Удалить заявку из списка? Связанные письма останутся в архиве.'},
         none: 'нет данных',
@@ -108,7 +117,7 @@ const I18N = {
         sunLabels: {sun:'Солнце', partial:'Полутень', shade:'Тень', mixed:'Смешано'},
         eventLabels: {watering:'Полив', mowing:'Покос', request:'Заявка'},
         directionLabels: {outgoing:'Исходящее', incoming:'Входящее'},
-        dashboard: {rain:'Дождь', recommendations:'Рекомендации', lastWatering:'Последний полив', mowing:'Покос', openRequests:'Открытых заявок', overdue:'Просрочены', inDays:'через', daysAgo:'дн. назад', noData:'нет данных', list:'Список', wind30:'За 30 дней', archive:'Архив', errorCreateZone:'Не удалось создать зону', errorSaveZone:'Не удалось сохранить зону', errorCreateUser:'Не удалось создать пользователя', errorCreateRequest:'Не удалось создать заявку', errorSaveRequest:'Не удалось сохранить заявку', today:'Сегодня', tomorrow:'Завтра', rain3:'За 3 дня'},
+        dashboard: {rain:'Дождь', recommendations:'Рекомендации', lastWatering:'Последний полив', mowing:'Покос', finance:'Финансы', openRequests:'Открытых заявок', overdue:'Просрочены', inDays:'через', daysAgo:'дн. назад', noData:'нет данных', list:'Список', wind30:'За 30 дней', archive:'Архив', errorCreateZone:'Не удалось создать зону', errorSaveZone:'Не удалось сохранить зону', errorCreateUser:'Не удалось создать пользователя', errorCreateRequest:'Не удалось создать заявку', errorSaveRequest:'Не удалось сохранить заявку', today:'Сегодня', tomorrow:'Завтра', rain3:'За 3 дня'},
         mowing: {last:'Последний', next:'Следующий плановый', requestFrom:'Запрос можно отправлять с', requestReady:'Пора готовить запрос', overdue:'Покос просрочен', cycle:'дн. цикл'},
         weather: {forecastRain:'Прогноз дождя', rainGdynia:'Осадки в Гдыне', last7:'За 7 дней', last30:'за 30 дней', wind:'Ветер', nextDays:'Ближайшие дни', lastDays:'Последние дни'},
         watering: {state:'Состояние', log:'Записать полив', history:'История', zone:'Зона', noData:'нет', deleteQuestion:'Удалить запись полива?'},
@@ -123,9 +132,10 @@ const I18N = {
         loginError: 'Nieprawidłowy login lub hasło',
         langRu: 'RU',
         langPl: 'PL',
-        tabs: {dashboard:'Główna', zones:'Strefy', watering:'Podlewanie', mowing:'Koszenie', requests:'Zgłoszenia', emails:'Poczta', events:'Dziennik', users:'Ludzie'},
+        tabs: {dashboard:'Główna', zones:'Strefy', watering:'Podlewanie', mowing:'Koszenie', requests:'Zgłoszenia', finance:'Finanse', emails:'Poczta', events:'Dziennik', users:'Ludzie'},
         actions: {create:'Utwórz', save:'Zapisz', delete:'Usuń', disable:'Wyłącz'},
-        labels: {code:'Kod', name:'Nazwa', type:'Typ', sun:'Słońce', notes:'Notatki', date:'Data', duration:'Czas trwania (min)', method:'Metoda', status:'Status', contractor:'Wykonawca', subject:'Temat', body:'Treść', attachments:'Załączniki', filterRequest:'Filtr po zgłoszeniu', request:'Zgłoszenie', title:'Tytuł', due:'Termin', summary:'Opis', next:'Następne działanie', role:'Rola', username:'Login', displayName:'Imię', password:'Hasło', quality:'Jakość (1-5)', direction:'Kierunek', sender:'Nadawca', recipient:'Odbiorca'},
+        labels: {code:'Kod', name:'Nazwa', type:'Typ', sun:'Słońce', notes:'Notatki', date:'Data', duration:'Czas trwania (min)', method:'Metoda', status:'Status', contractor:'Wykonawca', subject:'Temat', body:'Treść', attachments:'Załączniki', filterRequest:'Filtr po zgłoszeniu', request:'Zgłoszenie', title:'Tytuł', due:'Termin', summary:'Opis', next:'Następne działanie', role:'Rola', username:'Login', displayName:'Imię', password:'Hasło', quality:'Jakość (1-5)', direction:'Kierunek', sender:'Nadawca', recipient:'Odbiorca', vendor:'Sprzedawca', amount:'Kwota', currency:'Waluta', category:'Kategoria', kind:'Typ', reimbursementStatus:'Status zwrotu'},
+        finance: {new:'Nowy wydatek', list:'Lista wydatków', pending:'Czeka na zwrot', private:'Prywatne', reimbursable:'Do zwrotu', reimbursed:'Zwrócone', notNeeded:'Niepotrzebne', request:'Zgłoszenie', recent:'Ostatnie 30 dni', total:'Razem'},
         placeholders: {zoneCode:'W1', zoneName:'Trawnik przy wjeździe', zoneNotes:'tuja, bukszpan, skarpa, przy parkingu'},
         confirm: {zoneDisable:'Wyłączyć tę strefę? Historia zostanie, ale strefa zniknie z aktywnych list.', wateringDelete:'Usunąć wpis podlewania?', requestDelete:'Usunąć zgłoszenie z listy? Powiązane wiadomości zostaną w archiwum.'},
         none: 'brak danych',
@@ -140,7 +150,7 @@ const I18N = {
         sunLabels: {sun:'Słońce', partial:'Półcień', shade:'Cień', mixed:'Mieszane'},
         eventLabels: {watering:'Podlewanie', mowing:'Koszenie', request:'Zgłoszenie'},
         directionLabels: {outgoing:'Wychodząca', incoming:'Przychodząca'},
-        dashboard: {rain:'Deszcz', recommendations:'Rekomendacje', lastWatering:'Ostatnie podlewanie', mowing:'Koszenie', openRequests:'Otwarte zgłoszenia', overdue:'Przeterminowane', inDays:'za', daysAgo:'dni temu', noData:'brak danych', list:'Lista', wind30:'Przez 30 dni', archive:'Archiwum', errorCreateZone:'Nie udało się utworzyć strefy', errorSaveZone:'Nie udało się zapisać strefy', errorCreateUser:'Nie udało się utworzyć użytkownika', errorCreateRequest:'Nie udało się utworzyć zgłoszenia', errorSaveRequest:'Nie udało się zapisać zgłoszenia', today:'Dziś', tomorrow:'Jutro', rain3:'Za 3 dni'},
+        dashboard: {rain:'Deszcz', recommendations:'Rekomendacje', lastWatering:'Ostatnie podlewanie', mowing:'Koszenie', finance:'Finanse', openRequests:'Otwarte zgłoszenia', overdue:'Przeterminowane', inDays:'za', daysAgo:'dni temu', noData:'brak danych', list:'Lista', wind30:'Przez 30 dni', archive:'Archiwum', errorCreateZone:'Nie udało się utworzyć strefy', errorSaveZone:'Nie udało się zapisać strefy', errorCreateUser:'Nie udało się utworzyć użytkownika', errorCreateRequest:'Nie udało się utworzyć zgłoszenia', errorSaveRequest:'Nie udało się zapisać zgłoszenia', today:'Dziś', tomorrow:'Jutro', rain3:'Za 3 dni'},
         mowing: {last:'Ostatnie', next:'Następne planowane', requestFrom:'Zgłoszenie można wysłać od', requestReady:'Czas przygotować zgłoszenie', overdue:'Koszenie jest po terminie', cycle:'d. cykl'},
         weather: {forecastRain:'Prognoza deszczu', rainGdynia:'Opady w Gdyni', last7:'Ostatnie 7 dni', last30:'ostatnie 30 dni', wind:'Wiatr', nextDays:'Najbliższe dni', lastDays:'Ostatnie dni'},
         watering: {state:'Stan', log:'Zapisz podlewanie', history:'Historia', zone:'Strefa', noData:'brak', deleteQuestion:'Usunąć wpis podlewania?'},
@@ -169,7 +179,7 @@ function renderLanguageSwitches() {
     const loginSwitch = document.getElementById('login-lang-switch');
     if (loginSwitch) loginSwitch.innerHTML = html;
     const toolbar = document.getElementById('app-toolbar');
-    if (toolbar) toolbar.innerHTML = '<div class="lang-switch">' + html + '</div>';
+    if (toolbar) toolbar.innerHTML = '<div class="toolbar-row"><div class="lang-switch">' + html + '</div></div>';
 }
 
 function renderStaticLabels() {
@@ -183,6 +193,7 @@ function renderStaticLabels() {
     document.getElementById('tab-watering').innerHTML = '<span>&#128167;</span>' + t('tabs.watering');
     document.getElementById('tab-mowing').innerHTML = '<span>&#127807;</span>' + t('tabs.mowing');
     document.getElementById('tab-requests').innerHTML = '<span>&#128203;</span>' + t('tabs.requests');
+    document.getElementById('tab-finance').innerHTML = '<span>&#128176;</span>' + t('tabs.finance');
     document.getElementById('tab-emails').innerHTML = '<span>&#128231;</span>' + t('tabs.emails');
     document.getElementById('tab-events').innerHTML = '<span>&#128218;</span>' + t('tabs.events');
     document.getElementById('tab-users').innerHTML = '<span>&#128101;</span>' + t('tabs.users');
@@ -195,6 +206,34 @@ function requestStatusShort(v) { return t('requestStatusShort.' + v) || v || '';
 function eventLabel(v) { return t('eventLabels.' + v) || v || ''; }
 function directionLabel(v) { return t('directionLabels.' + v) || v || ''; }
 function recStatusLabel(v) { return t('recStatus.' + v) || v || ''; }
+function translateRecommendationReason(reason) {
+    if (!reason) return '';
+    if (LANG !== 'pl') return reason;
+    const map = [
+        ['ожидается дождь', 'spodziewany deszcz'],
+        ['полив не записан', 'brak wpisanego podlewania'],
+        ['недавно уже был дождь', 'niedawno był już deszcz'],
+        ['зона близко к поливу, но скоро ожидается дождь', 'strefa jest blisko podlewania, ale wkrótce spodziewany jest deszcz'],
+        ['жара', 'upał'],
+        ['пора поливать', 'czas podlewać'],
+        ['порог зоны', 'próg strefy'],
+        ['порог для зоны сейчас', 'próg dla strefy teraz'],
+        ['дн. назад', 'dni temu']
+    ];
+    let out = reason;
+    map.forEach(([from, to]) => { out = out.split(from).join(to); });
+    return out;
+}
+function financeKindLabel(v) {
+    return t('finance.' + (v === 'private' ? 'private' : 'reimbursable')) || v || '';
+}
+function financeStatusLabel(v) {
+    return t('finance.' + (v === 'reimbursed' ? 'reimbursed' : v === 'not_needed' ? 'notNeeded' : 'pending')) || v || '';
+}
+function financeSummaryLabel(v) {
+    return t('finance.' + v) || v || '';
+}
+function financeRequestLabel(v) { return v ? (LANG === 'pl' ? 'Zgłoszenie' : 'Заявка') : ''; }
 function yesNo(v) { return v ? t('yes') : t('no'); }
 function wateringMethodLabel(v) {
     const map = LANG === 'pl'
@@ -282,13 +321,15 @@ function showTab(tab) {
     currentTab = tab;
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
-    ({dashboard: renderDashboard, zones: renderZones, watering: renderWatering, mowing: renderMowing, requests: renderRequests, emails: renderEmails, events: renderEvents, users: renderUsers})[tab]();
+    ({dashboard: renderDashboard, zones: renderZones, watering: renderWatering, mowing: renderMowing, requests: renderRequests, finance: renderFinance, emails: renderEmails, events: renderEvents, users: renderUsers})[tab]();
 }
 
 // === DASHBOARD ===
 async function renderDashboard() {
     const d = await api('/api/dashboard');
     let h = '<h2>' + t('tabs.dashboard') + '</h2>';
+    if (d.open_requests > 0) h += '<div class="alert">' + t('dashboard.openRequests') + ': ' + d.open_requests + '</div>';
+    if (d.overdue_responses && d.overdue_responses.length) h += '<div class="alert alert-red">' + t('dashboard.overdue') + ': ' + d.overdue_responses.join(', ') + '</div>';
     if (d.last_mowing) {
         const m = d.last_mowing;
         h += '<div class="card"><h3>' + t('dashboard.mowing') + '</h3><div>' + t('mowing.last') + ': ' + (m.date || t('none')) + ' (' + (m.days_since !== null ? m.days_since + ' ' + t('dashboard.daysAgo') : '?') + ')</div>';
@@ -316,11 +357,17 @@ async function renderDashboard() {
         }
         h += '</div>';
     }
+    if (d.finance) {
+        h += '<div class="card"><h3>' + t('dashboard.finance') + '</h3>';
+        h += '<div class="list-item">' + financeSummaryLabel('pending') + ': <b>' + (d.finance.pending.count || 0) + '</b> / <b>' + Number(d.finance.pending.total || 0).toFixed(2) + '</b> PLN</div>';
+        h += '<div class="list-item">' + financeSummaryLabel('recent') + ': <b>' + (d.finance.recent_30d.count || 0) + '</b> / <b>' + Number(d.finance.recent_30d.total || 0).toFixed(2) + '</b> PLN</div>';
+        h += '</div>';
+    }
     if (d.recommendations && d.recommendations.length) {
         h += '<div class="card"><h3>' + t('dashboard.recommendations') + '</h3>';
         d.recommendations.forEach(r => {
             const c = r.status === 'Полить сегодня' ? 'badge-red' : r.status === 'Можно подождать' ? 'badge-yellow' : 'badge-green';
-            h += '<div class="list-item"><div class="rec-head"><span class="zone-icon" title="' + zoneTypeLabel(r.zone_type) + '">' + recommendationIcon(r.zone_type) + '</span><b>' + zoneLabel({code:r.zone_code, name:r.zone_name}) + '</b>: <span class="badge ' + c + '">' + recStatusLabel(r.status) + '</span></div><br><small>' + (r.reason||'') + '</small></div>';
+            h += '<div class="list-item"><div class="rec-head"><span class="zone-icon" title="' + zoneTypeLabel(r.zone_type) + '">' + recommendationIcon(r.zone_type) + '</span><b>' + zoneLabel({code:r.zone_code, name:r.zone_name}) + '</b>: <span class="badge ' + c + '">' + recStatusLabel(r.status) + '</span></div><br><small>' + esc(translateRecommendationReason(r.reason)) + '</small></div>';
         });
         h += '</div>';
     }
@@ -349,8 +396,6 @@ async function renderDashboard() {
         }
         h += '</div>';
     }
-    if (d.open_requests > 0) h += '<div class="alert">' + t('dashboard.openRequests') + ': ' + d.open_requests + '</div>';
-    if (d.overdue_responses && d.overdue_responses.length) h += '<div class="alert alert-red">' + t('dashboard.overdue') + ': ' + d.overdue_responses.join(', ') + '</div>';
     document.getElementById('app').innerHTML = h;
 }
 
@@ -617,6 +662,124 @@ async function deleteRequest(id) {
     await api('/api/requests/' + id, {method:'DELETE'});
     editingRequestId = null;
     renderRequests();
+}
+
+// === FINANCE ===
+let editingExpenseId = null;
+
+function financeBadgeClass(kind, status) {
+    if (status === 'reimbursed') return 'badge-green';
+    if (status === 'pending') return 'badge-yellow';
+    if (status === 'not_needed') return 'badge-gray';
+    return kind === 'private' ? 'badge-gray' : 'badge-blue';
+}
+
+async function renderFinance() {
+    const list = await api('/api/expenses');
+    const requests = await api('/api/requests');
+    const today = new Date().toISOString().slice(0, 10);
+    let h = '<h2>' + t('tabs.finance') + '</h2><div class="card"><h3>' + t('finance.new') + '</h3>';
+    h += '<div class="form-group"><label>' + t('labels.date') + '</label><input type="date" id="x-date" value="' + today + '"></div>';
+    h += '<div class="form-group"><label>' + t('labels.title') + '</label><input id="x-title"></div>';
+    h += '<div class="form-group"><label>' + t('labels.vendor') + '</label><input id="x-vendor"></div>';
+    h += '<div class="form-group"><label>' + t('labels.amount') + '</label><input type="number" step="0.01" id="x-amount"></div>';
+    h += '<div class="form-group"><label>' + t('labels.currency') + '</label><input id="x-currency" value="PLN"></div>';
+    h += '<div class="form-group"><label>' + t('labels.category') + '</label><input id="x-category"></div>';
+    h += '<div class="form-group"><label>' + t('labels.kind') + '</label><select id="x-kind"><option value="reimbursable">' + financeSummaryLabel('reimbursable') + '</option><option value="private">' + financeSummaryLabel('private') + '</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.reimbursementStatus') + '</label><select id="x-status"><option value="pending">' + financeSummaryLabel('pending') + '</option><option value="reimbursed">' + financeSummaryLabel('reimbursed') + '</option><option value="not_needed">' + financeSummaryLabel('notNeeded') + '</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.request') + '</label><select id="x-request"><option value="">-</option>' + requests.map(r => '<option value="' + r.id + '">' + esc(r.title) + '</option>').join('') + '</select></div>';
+    h += '<div class="form-group"><label>' + t('labels.notes') + '</label><textarea id="x-notes"></textarea></div>';
+    h += '<div class="form-group"><label>' + t('labels.attachments') + '</label><input type="file" id="x-files" multiple accept="image/*,application/pdf"></div>';
+    h += '<button onclick="submitExpense()">' + t('actions.create') + '</button><p id="x-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p></div>';
+    h += '<div class="card"><h3>' + t('finance.list') + '</h3>';
+    list.forEach(e => {
+        const amount = Number(e.amount || 0).toFixed(2) + ' ' + (e.currency || 'PLN');
+        const kindCls = e.kind === 'private' ? 'badge-gray' : 'badge-blue';
+        const statusCls = financeBadgeClass(e.kind, e.reimbursement_status);
+        h += '<div class="list-item"><b>' + esc(e.title) + '</b> <span class="badge ' + kindCls + '">' + financeSummaryLabel(e.kind === 'private' ? 'private' : 'reimbursable') + '</span> <span class="badge ' + statusCls + '">' + financeStatusLabel(e.reimbursement_status) + '</span><br>';
+        h += '<small>' + e.date + ' | ' + amount + (e.vendor ? ' | ' + esc(e.vendor) : '') + (e.category ? ' | ' + esc(e.category) : '') + (e.request_title ? ' | ' + financeRequestLabel(true) + ': ' + esc(e.request_title) : '') + '</small>';
+        if (e.notes) h += '<br><small>' + esc(e.notes) + '</small>';
+        if (e.attachments && e.attachments.length) {
+            h += '<br><small>' + e.attachments.map(a => '<a href="/uploads/' + encodeURIComponent(a) + '" target="_blank" rel="noopener">' + esc(a) + '</a>').join(' | ') + '</small>';
+        }
+        h += '<br><button style="padding:4px 8px;font-size:12px;min-height:auto;margin-top:6px;" onclick="toggleExpenseEditor(' + e.id + ')">&#9998;</button></div>';
+        if (editingExpenseId === e.id) {
+            h += '<div style="margin-top:10px;">';
+            h += '<div class="form-group"><label>' + t('labels.date') + '</label><input type="date" id="xe-date" value="' + esc(e.date || today) + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.title') + '</label><input id="xe-title" value="' + esc(e.title || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.vendor') + '</label><input id="xe-vendor" value="' + esc(e.vendor || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.amount') + '</label><input type="number" step="0.01" id="xe-amount" value="' + esc(e.amount || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.currency') + '</label><input id="xe-currency" value="' + esc(e.currency || 'PLN') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.category') + '</label><input id="xe-category" value="' + esc(e.category || '') + '"></div>';
+            h += '<div class="form-group"><label>' + t('labels.kind') + '</label><select id="xe-kind"><option value="reimbursable"' + (e.kind === 'reimbursable' ? ' selected' : '') + '>' + financeSummaryLabel('reimbursable') + '</option><option value="private"' + (e.kind === 'private' ? ' selected' : '') + '>' + financeSummaryLabel('private') + '</option></select></div>';
+            h += '<div class="form-group"><label>' + t('labels.reimbursementStatus') + '</label><select id="xe-status"><option value="pending"' + (e.reimbursement_status === 'pending' ? ' selected' : '') + '>' + financeSummaryLabel('pending') + '</option><option value="reimbursed"' + (e.reimbursement_status === 'reimbursed' ? ' selected' : '') + '>' + financeSummaryLabel('reimbursed') + '</option><option value="not_needed"' + (e.reimbursement_status === 'not_needed' ? ' selected' : '') + '>' + financeSummaryLabel('notNeeded') + '</option></select></div>';
+            h += '<div class="form-group"><label>' + t('labels.request') + '</label><select id="xe-request"><option value="">-</option>' + requests.map(r => '<option value="' + r.id + '"' + (Number(e.request_id) === Number(r.id) ? ' selected' : '') + '>' + esc(r.title) + '</option>').join('') + '</select></div>';
+            h += '<div class="form-group"><label>' + t('labels.notes') + '</label><textarea id="xe-notes">' + esc(e.notes || '') + '</textarea></div>';
+            h += '<div class="form-group"><label>' + t('labels.attachments') + '</label><input type="file" id="xe-files" multiple accept="image/*,application/pdf"></div>';
+            h += '<button onclick="saveExpense(' + e.id + ')" style="margin-right:8px;">' + t('actions.save') + '</button>';
+            h += '<button onclick="deleteExpense(' + e.id + ')" style="background:#c62828;">' + t('actions.delete') + '</button>';
+            h += '<p style="font-size:12px;color:#666;margin-top:6px;">' + (LANG === 'pl' ? 'Nowe pliki zostaną dodane do istniejących.' : 'Новые файлы будут добавлены к существующим.') + '</p>';
+            h += '</div>';
+        }
+    });
+    h += '</div>';
+    document.getElementById('app').innerHTML = h;
+}
+
+async function submitExpense() {
+    const err = document.getElementById('x-error');
+    err.classList.add('hidden');
+    const fd = new FormData();
+    fd.append('date', document.getElementById('x-date').value);
+    fd.append('title', document.getElementById('x-title').value.trim());
+    fd.append('amount', document.getElementById('x-amount').value);
+    fd.append('currency', document.getElementById('x-currency').value.trim() || 'PLN');
+    const vendor = document.getElementById('x-vendor').value.trim(); if (vendor) fd.append('vendor', vendor);
+    const category = document.getElementById('x-category').value.trim(); if (category) fd.append('category', category);
+    fd.append('kind', document.getElementById('x-kind').value);
+    fd.append('reimbursement_status', document.getElementById('x-status').value);
+    const req = document.getElementById('x-request').value; if (req) fd.append('request_id', req);
+    const notes = document.getElementById('x-notes').value.trim(); if (notes) fd.append('notes', notes);
+    const files = document.getElementById('x-files').files;
+    for (let i = 0; i < files.length; i++) fd.append('attachments', files[i]);
+    const r = await fetch('/api/expenses', {method:'POST', headers: authHeadersNoBody(), body: fd});
+    if (!r.ok) {
+        err.textContent = LANG === 'pl' ? 'Nie udało się dodać wydatku' : 'Не удалось добавить трату';
+        err.classList.remove('hidden');
+        return;
+    }
+    renderFinance();
+}
+
+function toggleExpenseEditor(id) {
+    editingExpenseId = editingExpenseId === id ? null : id;
+    renderFinance();
+}
+
+async function saveExpense(id) {
+    const fd = new FormData();
+    fd.append('date', document.getElementById('xe-date').value);
+    fd.append('title', document.getElementById('xe-title').value.trim());
+    fd.append('amount', document.getElementById('xe-amount').value);
+    fd.append('currency', document.getElementById('xe-currency').value.trim() || 'PLN');
+    const vendor = document.getElementById('xe-vendor').value.trim(); if (vendor) fd.append('vendor', vendor);
+    const category = document.getElementById('xe-category').value.trim(); if (category) fd.append('category', category);
+    fd.append('kind', document.getElementById('xe-kind').value);
+    fd.append('reimbursement_status', document.getElementById('xe-status').value);
+    const req = document.getElementById('xe-request').value; if (req) fd.append('request_id', req);
+    const notes = document.getElementById('xe-notes').value.trim(); if (notes) fd.append('notes', notes);
+    const files = document.getElementById('xe-files').files;
+    for (let i = 0; i < files.length; i++) fd.append('attachments', files[i]);
+    await fetch('/api/expenses/' + id, {method:'PUT', headers: authHeadersNoBody(), body: fd});
+    editingExpenseId = null;
+    renderFinance();
+}
+
+async function deleteExpense(id) {
+    if (!confirm(LANG === 'pl' ? 'Usunąć wydatek?' : 'Удалить трату?')) return;
+    await api('/api/expenses/' + id, {method:'DELETE'});
+    editingExpenseId = null;
+    renderFinance();
 }
 
 // === EMAILS ===
