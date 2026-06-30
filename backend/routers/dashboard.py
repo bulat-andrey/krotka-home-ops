@@ -31,7 +31,7 @@ def dashboard():
 
     # Last watering per zone with days_since
     watering_rows = db.execute("""
-        SELECT z.id, z.code, z.name, w.date
+        SELECT z.id, z.code, z.name, z.type as zone_type, w.date
         FROM zones z
         LEFT JOIN watering_events w ON w.id = (
             SELECT id FROM watering_events WHERE zone_id = z.id ORDER BY date DESC LIMIT 1

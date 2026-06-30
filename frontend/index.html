@@ -207,6 +207,9 @@ function recommendationIcon(zoneType) {
     };
     return icons[zoneType] || icons.default;
 }
+function wateringIcon(zoneType) {
+    return recommendationIcon(zoneType);
+}
 
 function zoneLabel(z) { return (z.code ? z.code + ' - ' : '') + z.name; }
 function esc(v) {
@@ -294,7 +297,7 @@ async function renderDashboard() {
         h += '<div class="card"><h3>' + t('dashboard.lastWatering') + '</h3>';
         d.last_watering.forEach(w => {
             const ds = w.days_since !== null ? w.days_since + ' дн. назад' : t('none');
-            h += '<div class="list-item">' + zoneLabel({code:w.zone_code, name:w.zone_name}) + ': ' + ds + '</div>';
+            h += '<div class="list-item"><div class="rec-head"><span class="zone-icon" title="' + zoneTypeLabel(w.zone_type) + '">' + wateringIcon(w.zone_type) + '</span><b>' + zoneLabel({code:w.zone_code, name:w.zone_name}) + '</b></div>: ' + ds + '</div>';
         });
         h += '</div>';
     }
