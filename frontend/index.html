@@ -39,6 +39,9 @@
         .lang-switch{display:flex;gap:8px;justify-content:flex-end;margin-bottom:10px}
         .lang-switch button{padding:8px 12px;min-height:auto;font-size:13px;background:#eceff1;color:#455a64}
         .lang-switch button.active{background:#2196F3;color:#fff}
+        .rec-head{display:flex;align-items:center;gap:8px;min-width:0}
+        .zone-icon{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 18px;color:#2e7d32}
+        .zone-icon svg{width:18px;height:18px;display:block;fill:currentColor}
     </style>
 </head>
 <body>
@@ -195,6 +198,15 @@ function wateringMethodLabel(v) {
         : {'дождеватель': 'Дождеватель', 'пистолет': 'Пистолет'};
     return map[v] || v || '';
 }
+function recommendationIcon(zoneType) {
+    const icons = {
+        lawn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h2v-6H5zM9 20h2v-8H9zM13 20h2v-5h-2zM17 20h2v-9h-2zM4 20h16v1H4z"/></svg>',
+        bushes: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 19a4 4 0 0 1 0-8 5 5 0 0 1 9.5-1.5A4 4 0 1 1 17 19H7zm3-2h4v-4h-4v4z"/></svg>',
+        tree: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 20h2v-6h-2zM12 4a5 5 0 0 0-4.9 4H7a4 4 0 0 0 0 8h10a4 4 0 0 0 .9-7.9A5 5 0 0 0 12 4z"/></svg>',
+        default: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l4 8h-3v10h-2V11H8l4-8z"/></svg>'
+    };
+    return icons[zoneType] || icons.default;
+}
 
 function zoneLabel(z) { return (z.code ? z.code + ' - ' : '') + z.name; }
 function esc(v) {
@@ -274,7 +286,7 @@ async function renderDashboard() {
         h += '<div class="card"><h3>' + t('dashboard.recommendations') + '</h3>';
         d.recommendations.forEach(r => {
             const c = r.status === 'Полить сегодня' ? 'badge-red' : r.status === 'Можно подождать' ? 'badge-yellow' : 'badge-green';
-            h += '<div class="list-item"><b>' + zoneLabel({code:r.zone_code, name:r.zone_name}) + '</b>: <span class="badge ' + c + '">' + recStatusLabel(r.status) + '</span><br><small>' + (r.reason||'') + '</small></div>';
+            h += '<div class="list-item"><div class="rec-head"><span class="zone-icon" title="' + zoneTypeLabel(r.zone_type) + '">' + recommendationIcon(r.zone_type) + '</span><b>' + zoneLabel({code:r.zone_code, name:r.zone_name}) + '</b>: <span class="badge ' + c + '">' + recStatusLabel(r.status) + '</span></div><br><small>' + (r.reason||'') + '</small></div>';
         });
         h += '</div>';
     }
