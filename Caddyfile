@@ -1,4 +1,4 @@
-home.46.225.65.120.sslip.io {
+krotka.46.225.65.120.sslip.io {
     encode zstd gzip
     reverse_proxy app:8000
 }
@@ -11,4 +11,3 @@ study.46.225.65.120.sslip.io {
 
     reverse_proxy host.docker.internal:3002
 }
-

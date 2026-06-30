@@ -14,12 +14,6 @@ By default the app listens on `http://localhost:8010`, leaving `8000` free for o
 Set `AUTH_PASSWORD` in `.env` before exposing the app beyond local development.
 The first admin account is seeded as `admin` using `AUTH_PASSWORD`.
 
-On the current host, Caddy publishes Home Ops at:
-
-```text
-https://home.46.225.65.120.sslip.io
-```
-
 ## Configuration
 
 | Variable | Default | Description |
@@ -29,8 +23,8 @@ https://home.46.225.65.120.sslip.io
 | `ADMIN_USERNAME` | `admin` | Username for the first seeded admin account |
 | `AUTH_PASSWORD` | required | Password used by the web app |
 | `DB_PATH` | `/data/krotka.db` | SQLite database path inside the container |
-| `LATITUDE` | `54.49278325820789` | Weather lookup latitude |
-| `LONGITUDE` | `18.513418262277867` | Weather lookup longitude |
+| `LATITUDE` | set per deployment | Weather lookup latitude |
+| `LONGITUDE` | set per deployment | Weather lookup longitude |
 | `WEATHER_PAST_DAYS` | `30` | Number of past weather days to keep refreshing |
 | `WEATHER_FORECAST_DAYS` | `5` | Number of forecast days to fetch |
 | `WIND_THRESHOLD_KT` | `14` | Wind threshold for kite-day dashboard summaries |
