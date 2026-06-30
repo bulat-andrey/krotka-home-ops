@@ -101,7 +101,7 @@ const I18N = {
         sunLabels: {sun:'Солнце', partial:'Полутень', shade:'Тень', mixed:'Смешано'},
         eventLabels: {watering:'Полив', mowing:'Покос', request:'Заявка'},
         directionLabels: {outgoing:'Исходящее', incoming:'Входящее'},
-        dashboard: {recommendations:'Рекомендации', lastWatering:'Последний полив', mowing:'Покос', openRequests:'Открытых заявок', overdue:'Просрочены', inDays:'через', daysAgo:'дн. назад', noData:'нет данных', list:'Список'},
+        dashboard: {recommendations:'Рекомендации', lastWatering:'Последний полив', mowing:'Покос', openRequests:'Открытых заявок', overdue:'Просрочены', inDays:'через', daysAgo:'дн. назад', noData:'нет данных', list:'Список', wind30:'За 30 дней', archive:'Архив', errorCreateZone:'Не удалось создать зону', errorSaveZone:'Не удалось сохранить зону', errorCreateUser:'Не удалось создать пользователя'},
         mowing: {last:'Последний', next:'Следующий плановый', requestFrom:'Запрос можно отправлять с', requestReady:'Пора готовить запрос', overdue:'Покос просрочен', cycle:'дн. цикл'},
         weather: {forecastRain:'Прогноз дождя', rainGdynia:'Осадки в Гдыне', last7:'За 7 дней', last30:'за 30 дней', wind:'Ветер', nextDays:'Ближайшие дни', lastDays:'Последние дни'},
         watering: {state:'Состояние', log:'Записать полив', history:'История', zone:'Зона', noData:'нет', deleteQuestion:'Удалить запись полива?'},
@@ -133,7 +133,7 @@ const I18N = {
         sunLabels: {sun:'Słońce', partial:'Półcień', shade:'Cień', mixed:'Mieszane'},
         eventLabels: {watering:'Podlewanie', mowing:'Koszenie', request:'Zgłoszenie'},
         directionLabels: {outgoing:'Wychodząca', incoming:'Przychodząca'},
-        dashboard: {recommendations:'Rekomendacje', lastWatering:'Ostatnie podlewanie', mowing:'Koszenie', openRequests:'Otwarte zgłoszenia', overdue:'Przeterminowane', inDays:'za', daysAgo:'dni temu', noData:'brak danych', list:'Lista'},
+        dashboard: {recommendations:'Rekomendacje', lastWatering:'Ostatnie podlewanie', mowing:'Koszenie', openRequests:'Otwarte zgłoszenia', overdue:'Przeterminowane', inDays:'za', daysAgo:'dni temu', noData:'brak danych', list:'Lista', wind30:'Przez 30 dni', archive:'Archiwum', errorCreateZone:'Nie udało się utworzyć strefy', errorSaveZone:'Nie udało się zapisać strefy', errorCreateUser:'Nie udało się utworzyć użytkownika'},
         mowing: {last:'Ostatnie', next:'Następne planowane', requestFrom:'Zgłoszenie można wysłać od', requestReady:'Czas przygotować zgłoszenie', overdue:'Koszenie jest po terminie', cycle:'d. cykl'},
         weather: {forecastRain:'Prognoza deszczu', rainGdynia:'Opady w Gdyni', last7:'Ostatnie 7 dni', last30:'ostatnie 30 dni', wind:'Wiatr', nextDays:'Najbliższe dni', lastDays:'Ostatnie dni'},
         watering: {state:'Stan', log:'Zapisz podlewanie', history:'Historia', zone:'Strefa', noData:'brak', deleteQuestion:'Usunąć wpis podlewania?'},
@@ -301,7 +301,7 @@ async function renderDashboard() {
     if (d.wind) {
         const threshold = Number(d.wind.threshold_kt || 14);
         h += '<div class="card"><h3>' + t('weather.wind') + '</h3>';
-        h += '<div class="list-item">За 30 дней: <b>' + (d.wind.windy_days_30d || 0) + '</b> дн. с часом >= ' + threshold.toFixed(0) + ' kt</div>';
+        h += '<div class="list-item">' + t('dashboard.wind30') + ': <b>' + (d.wind.windy_days_30d || 0) + '</b> дн. с часом >= ' + threshold.toFixed(0) + ' kt</div>';
         if (d.wind.forecast && d.wind.forecast.length) {
             h += '<h3>' + t('weather.nextDays') + '</h3>';
             d.wind.forecast.forEach(w => {
@@ -355,18 +355,18 @@ async function renderZones() {
     h += '<button onclick="submitZone()">' + t('actions.create') + '</button><p id="z-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p></div>';
     h += '<div class="card"><h3>' + t('dashboard.list') + '</h3>';
     const typeOptions = [
-        ['lawn', 'Газон'],
-        ['bushes', 'Кустарники'],
-        ['new_plants', 'Новые посадки'],
-        ['tree', 'Дерево'],
-        ['hedge', 'Живая изгородь'],
-        ['other', 'Другое']
+        ['lawn', zoneTypeLabel('lawn')],
+        ['bushes', zoneTypeLabel('bushes')],
+        ['new_plants', zoneTypeLabel('new_plants')],
+        ['tree', zoneTypeLabel('tree')],
+        ['hedge', zoneTypeLabel('hedge')],
+        ['other', zoneTypeLabel('other')]
     ];
     const sunOptions = [
-        ['sun', 'Солнце'],
-        ['partial', 'Полутень'],
-        ['shade', 'Тень'],
-        ['mixed', 'Смешано']
+        ['sun', sunLabel('sun')],
+        ['partial', sunLabel('partial')],
+        ['shade', sunLabel('shade')],
+        ['mixed', sunLabel('mixed')]
     ];
     zones.forEach(z => {
         h += '<div class="list-item"><b>' + zoneLabel(z) + '</b><br><small>' + zoneTypeLabel(z.type) + (z.sun_exposure ? ' | ' + sunLabel(z.sun_exposure) : '') + (z.notes ? ' | ' + z.notes : '') + '</small><br>';
@@ -401,7 +401,7 @@ async function submitZone() {
     const r = await fetch('/api/zones', {method:'POST', headers: authHeaders(), body: JSON.stringify(data)});
     if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        err.textContent = body.detail || 'Не удалось создать зону';
+        err.textContent = body.detail || t('dashboard.errorCreateZone');
         err.classList.remove('hidden');
         return;
     }
@@ -428,7 +428,7 @@ async function saveZone(id) {
     const r = await fetch('/api/zones/' + id, {method:'PUT', headers: authHeaders(), body: JSON.stringify(data)});
     if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        err.textContent = body.detail || 'Не удалось сохранить зону';
+        err.textContent = body.detail || t('dashboard.errorSaveZone');
         err.classList.remove('hidden');
         return;
     }
@@ -457,14 +457,14 @@ async function renderWatering() {
     h += '<div class="form-group"><label>' + t('watering.zone') + '</label><select id="w-zone">' + zones.map(z => '<option value="' + z.id + '">' + zoneLabel(z) + '</option>').join('') + '</select></div>';
     h += '<div class="form-group"><label>' + t('labels.date') + '</label><input type="date" id="w-date" value="' + new Date().toISOString().slice(0,10) + '"></div>';
     h += '<div class="form-group"><label>' + t('labels.duration') + '</label><input type="number" id="w-dur" value="15"></div>';
-    h += '<div class="form-group"><label>' + t('labels.method') + '</label><select id="w-method"><option value="дождеватель">Дождеватель</option><option value="пистолет">Пистолет</option></select></div>';
+    h += '<div class="form-group"><label>' + t('labels.method') + '</label><select id="w-method"><option value="дождеватель">' + (LANG === 'pl' ? 'Zraszacz' : 'Дождеватель') + '</option><option value="пистолет">' + (LANG === 'pl' ? 'Pistolet' : 'Пистолет') + '</option></select></div>';
     h += '<div class="form-group"><label>' + t('labels.notes') + '</label><input id="w-notes"></div>';
     h += '<button onclick="submitWatering()">' + t('actions.save') + '</button></div>';
     h += '<div class="card"><h3>' + t('watering.history') + '</h3>';
     const methodOptions = ['дождеватель', 'пистолет'];
     history.slice(0, 20).forEach(e => {
         const zn = zones.find(z => z.id === e.zone_id);
-        h += '<div class="list-item">' + e.date + ' - ' + (zn ? zoneLabel(zn) : '?') + ' - ' + (e.duration_min||'?') + ' мин (' + (e.method||'') + ')';
+        h += '<div class="list-item">' + e.date + ' - ' + (zn ? zoneLabel(zn) : '?') + ' - ' + (e.duration_min||'?') + ' ' + (LANG === 'pl' ? 'min' : 'мин') + ' (' + (e.method||'') + ')';
         h += ' <button style="padding:4px 8px;font-size:12px;min-height:auto;" onclick="toggleWateringEditor(' + e.id + ')">&#9998;</button></div>';
         if (editingWateringId === e.id) {
             h += '<div style="margin-top:10px;">';
@@ -621,7 +621,7 @@ async function renderEmails() {
     h += '<div class="form-group"><label>' + t('labels.body') + '</label><textarea id="e-body"></textarea></div>';
     h += '<div class="form-group"><label>' + t('labels.attachments') + '</label><input type="file" id="e-attach" multiple></div>';
     h += '<button onclick="submitEmail()">' + t('actions.save') + '</button></div>';
-    h += '<div class="card" id="email-list"><h3>' + t('weather.rainGdynia') + '</h3>';
+    h += '<div class="card" id="email-list"><h3>' + t('dashboard.archive') + '</h3>';
     list.slice(0, 30).forEach(e => { h += '<div class="list-item">' + (e.direction==='outgoing'?'&#8594;':'&#8592;') + ' <b>' + (e.subject||'(без темы)') + '</b><br><small>' + (e.sender||'') + ' &rarr; ' + (e.recipient||'') + ' | ' + (e.sent_at||'') + '</small></div>'; });
     h += '</div>';
     document.getElementById('app').innerHTML = h;
@@ -629,7 +629,7 @@ async function renderEmails() {
 async function filterEmails() {
     const rid = document.getElementById('e-filter').value;
     const list = await api(rid ? '/api/emails?request_id=' + rid : '/api/emails');
-    let h = '<h3>Архив</h3>';
+    let h = '<h3>' + t('dashboard.archive') + '</h3>';
     list.forEach(e => { h += '<div class="list-item">' + (e.direction==='outgoing'?'&#8594;':'&#8592;') + ' <b>' + (e.subject||'(без темы)') + '</b><br><small>' + (e.sender||'') + ' &rarr; ' + (e.recipient||'') + ' | ' + (e.sent_at||'') + '</small></div>'; });
     document.getElementById('email-list').innerHTML = h;
 }
@@ -693,7 +693,7 @@ async function submitUser() {
     const r = await fetch('/api/users', {method:'POST', headers: authHeaders(), body: JSON.stringify(data)});
     if (!r.ok) {
         const body = await r.json().catch(() => ({}));
-        err.textContent = body.detail || 'Не удалось создать пользователя';
+        err.textContent = body.detail || t('dashboard.errorCreateUser');
         err.classList.remove('hidden');
         return;
     }
