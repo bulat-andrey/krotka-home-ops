@@ -60,7 +60,6 @@ def generate_recommendations():
             temp_max=temp_max,
             rain_3d=rain_3d,
             rain_7d=rain_7d,
-            forecast_today=forecast_today or 0,
             forecast_48h=forecast_48h,
             days_since=days_since,
         )
@@ -100,7 +99,6 @@ def _decide(
     temp_max,
     rain_3d,
     rain_7d,
-    forecast_today,
     forecast_48h,
     days_since,
 ):
@@ -111,39 +109,35 @@ def _decide(
     dry_after = rules["hot_dry_after"] if heat else rules["dry_after"]
     effective_days_since = days_since if days_since is not None else 999
     last_water_text = "полив не записан" if days_since is None else f"полив {days_since} дн. назад"
-    weather_text = (
-        f"дождь 3д {rain_3d:.1f} мм, 7д {rain_7d:.1f} мм, "
-        f"прогноз сегодня {forecast_today:.1f} мм, 48ч {forecast_48h:.1f} мм"
-    )
 
     if forecast_48h >= rules["forecast_skip"]:
         return (
             STATUS_SKIP,
-            f"{weather_text}; {last_water_text}; порог зоны {rules['forecast_skip']} мм",
+            f"ожидается дождь; {last_water_text}; порог зоны {rules['forecast_skip']} мм",
         )
 
     if rain_3d >= rules["recent_rain_ok"]:
-        return STATUS_WAIT, f"за последние 3 дня было {rain_3d:.1f} мм дождя; {last_water_text}"
+        return STATUS_WAIT, f"недавно уже был дождь; {last_water_text}"
 
     if effective_days_since < dry_after:
         return (
             STATUS_WAIT,
-            f"{last_water_text}; порог для зоны сейчас {dry_after} дн.; {weather_text}",
+            f"{last_water_text}; порог для зоны сейчас {dry_after} дн.",
         )
 
     if forecast_48h >= 2 and effective_days_since <= dry_after + 1:
         return (
             STATUS_WAIT,
-            f"зона близко к поливу, но в ближайшие 2 дня прогноз {forecast_48h:.1f} мм; {last_water_text}",
+            f"зона близко к поливу, но скоро ожидается дождь; {last_water_text}",
         )
 
     if heat and rain_7d < rules["recent_rain_ok"]:
         return (
             STATUS_WATER,
-            f"жара до {temp_max:.0f}°C, {last_water_text}, за 7 дней только {rain_7d:.1f} мм",
+            f"жара, {last_water_text}",
         )
 
     return (
         STATUS_WATER,
-        f"{last_water_text}; дождя за 3 дня {rain_3d:.1f} мм, значимого дождя в прогнозе нет",
+        f"{last_water_text}; пора поливать",
     )
