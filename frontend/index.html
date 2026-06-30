@@ -47,10 +47,10 @@
     <div class="login-box">
         <h1>Krotka Home Ops</h1>
         <div class="lang-switch" id="login-lang-switch"></div>
-        <input type="text" id="login-user" placeholder="Пользователь" value="admin" autocomplete="username">
-        <input type="password" id="login-pass" placeholder="Пароль">
-        <button onclick="doLogin()" id="login-button" style="width:100%;margin-top:8px;">Войти</button>
-        <p id="login-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;">Неверный логин или пароль</p>
+        <input type="text" id="login-user" placeholder="" value="admin" autocomplete="username">
+        <input type="password" id="login-pass" placeholder="">
+        <button onclick="doLogin()" id="login-button" style="width:100%;margin-top:8px;"></button>
+        <p id="login-error" class="hidden" style="color:red;margin-top:8px;font-size:14px;"></p>
     </div>
 </div>
 
@@ -58,14 +58,14 @@
     <div id="app-toolbar" style="padding:12px 12px 0 12px;"></div>
     <div id="app"></div>
     <nav>
-        <button onclick="showTab('dashboard')" id="tab-dashboard"><span>&#127968;</span>Главная</button>
-        <button onclick="showTab('zones')" id="tab-zones"><span>&#128205;</span>Зоны</button>
-        <button onclick="showTab('watering')" id="tab-watering"><span>&#128167;</span>Полив</button>
-        <button onclick="showTab('mowing')" id="tab-mowing"><span>&#127807;</span>Покос</button>
-        <button onclick="showTab('requests')" id="tab-requests"><span>&#128203;</span>Заявки</button>
-        <button onclick="showTab('emails')" id="tab-emails"><span>&#128231;</span>Почта</button>
-        <button onclick="showTab('events')" id="tab-events"><span>&#128218;</span>Журнал</button>
-        <button onclick="showTab('users')" id="tab-users" class="hidden"><span>&#128101;</span>Люди</button>
+        <button onclick="showTab('dashboard')" id="tab-dashboard"><span>&#127968;</span></button>
+        <button onclick="showTab('zones')" id="tab-zones"><span>&#128205;</span></button>
+        <button onclick="showTab('watering')" id="tab-watering"><span>&#128167;</span></button>
+        <button onclick="showTab('mowing')" id="tab-mowing"><span>&#127807;</span></button>
+        <button onclick="showTab('requests')" id="tab-requests"><span>&#128203;</span></button>
+        <button onclick="showTab('emails')" id="tab-emails"><span>&#128231;</span></button>
+        <button onclick="showTab('events')" id="tab-events"><span>&#128218;</span></button>
+        <button onclick="showTab('users')" id="tab-users" class="hidden"><span>&#128101;</span></button>
     </nav>
 </div>
 
