@@ -285,6 +285,19 @@ function showTab(tab) {
 async function renderDashboard() {
     const d = await api('/api/dashboard');
     let h = '<h2>' + t('tabs.dashboard') + '</h2>';
+    if (d.last_mowing) {
+        const m = d.last_mowing;
+        h += '<div class="card"><h3>' + t('dashboard.mowing') + '</h3><div>' + t('mowing.last') + ': ' + (m.date || t('none')) + ' (' + (m.days_since !== null ? m.days_since + ' ' + t('dashboard.daysAgo') : '?') + ')</div>';
+        if (m.next_date) {
+            h += '<div class="list-item">' + t('mowing.next') + ': <b>' + m.next_date + '</b> (' + m.interval_days + ' ' + t('mowing.cycle') + ')</div>';
+            h += '<div class="list-item">' + t('mowing.requestFrom') + ': <b>' + m.request_from + '</b>';
+            if (m.request_due) h += ' <span class="badge badge-yellow">' + t('mowing.requestReady') + '</span>';
+            else h += ' <span class="badge badge-gray">' + t('dashboard.inDays') + ' ' + m.days_until_request + ' дн.</span>';
+            h += '</div>';
+        }
+        if (m.overdue) h += '<div class="alert alert-red">' + t('mowing.overdue') + '</div>';
+        h += '</div></div>';
+    }
     if ((d.rain_totals && (d.rain_totals.last_3_days !== undefined || d.rain_totals.last_7_days !== undefined)) || (d.weather_forecast && d.weather_forecast.length)) {
         h += '<div class="card"><h3>' + t('dashboard.rain') + '</h3>';
         if (d.rain_totals) {
@@ -331,19 +344,6 @@ async function renderDashboard() {
             });
         }
         h += '</div>';
-    }
-    if (d.last_mowing) {
-        const m = d.last_mowing;
-        h += '<div class="card"><h3>' + t('dashboard.mowing') + '</h3><div>' + t('mowing.last') + ': ' + (m.date || t('none')) + ' (' + (m.days_since !== null ? m.days_since + ' ' + t('dashboard.daysAgo') : '?') + ')</div>';
-        if (m.next_date) {
-            h += '<div class="list-item">' + t('mowing.next') + ': <b>' + m.next_date + '</b> (' + m.interval_days + ' ' + t('mowing.cycle') + ')</div>';
-            h += '<div class="list-item">' + t('mowing.requestFrom') + ': <b>' + m.request_from + '</b>';
-            if (m.request_due) h += ' <span class="badge badge-yellow">' + t('mowing.requestReady') + '</span>';
-            else h += ' <span class="badge badge-gray">' + t('dashboard.inDays') + ' ' + m.days_until_request + ' дн.</span>';
-            h += '</div>';
-        }
-        if (m.overdue) h += '<div class="alert alert-red">' + t('mowing.overdue') + '</div>';
-        h += '</div></div>';
     }
     if (d.open_requests > 0) h += '<div class="alert">' + t('dashboard.openRequests') + ': ' + d.open_requests + '</div>';
     if (d.overdue_responses && d.overdue_responses.length) h += '<div class="alert alert-red">' + t('dashboard.overdue') + ': ' + d.overdue_responses.join(', ') + '</div>';
