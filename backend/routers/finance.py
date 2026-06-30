@@ -49,6 +49,7 @@ async def create_expense(
     category: str = Form(None),
     kind: str = Form("reimbursable"),
     reimbursement_status: str = Form("pending"),
+    work_item_id: int = Form(None),
     request_id: int = Form(None),
     notes: str = Form(None),
     attachments: list[UploadFile] = File(None),
@@ -58,8 +59,8 @@ async def create_expense(
     try:
         cur = db.execute(
             """INSERT INTO expenses
-               (date, title, vendor, amount, currency, category, kind, reimbursement_status, request_id, notes, attachments)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               (date, title, vendor, amount, currency, category, kind, reimbursement_status, work_item_id, request_id, notes, attachments)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 date,
                 title,
@@ -69,6 +70,7 @@ async def create_expense(
                 category,
                 kind or "reimbursable",
                 reimbursement_status or "pending",
+                work_item_id,
                 request_id,
                 notes,
                 json.dumps(attachment_paths) if attachment_paths else None,
@@ -76,9 +78,10 @@ async def create_expense(
         )
         db.commit()
         row = db.execute(
-            """SELECT e.*, r.title as request_title
+            """SELECT e.*, r.title as request_title, w.title as work_item_title
                FROM expenses e
                LEFT JOIN requests r ON e.request_id = r.id
+               LEFT JOIN work_items w ON e.work_item_id = w.id
                WHERE e.id = ?""",
             (cur.lastrowid,),
         ).fetchone()
@@ -94,9 +97,10 @@ def list_expenses(limit: int = 100):
     db = get_db()
     try:
         rows = db.execute(
-            """SELECT e.*, r.title as request_title
+            """SELECT e.*, r.title as request_title, w.title as work_item_title
                FROM expenses e
                LEFT JOIN requests r ON e.request_id = r.id
+               LEFT JOIN work_items w ON e.work_item_id = w.id
                WHERE e.deleted_at IS NULL
                ORDER BY e.date DESC, e.id DESC
                LIMIT ?""",
@@ -144,9 +148,10 @@ def summary():
             (thirty_days_ago,),
         ).fetchone()
         recent = db.execute(
-            """SELECT e.*, r.title as request_title
+            """SELECT e.*, r.title as request_title, w.title as work_item_title
                FROM expenses e
                LEFT JOIN requests r ON e.request_id = r.id
+               LEFT JOIN work_items w ON e.work_item_id = w.id
                WHERE e.deleted_at IS NULL
                ORDER BY e.date DESC, e.id DESC
                LIMIT 5""",
@@ -171,9 +176,10 @@ def get_expense(expense_id: int):
     db = get_db()
     try:
         row = db.execute(
-            """SELECT e.*, r.title as request_title
+            """SELECT e.*, r.title as request_title, w.title as work_item_title
                FROM expenses e
                LEFT JOIN requests r ON e.request_id = r.id
+               LEFT JOIN work_items w ON e.work_item_id = w.id
                WHERE e.id = ? AND e.deleted_at IS NULL""",
             (expense_id,),
         ).fetchone()
@@ -197,6 +203,7 @@ async def update_expense(
     category: str = Form(None),
     kind: str = Form(None),
     reimbursement_status: str = Form(None),
+    work_item_id: int = Form(None),
     request_id: int = Form(None),
     notes: str = Form(None),
     attachments: list[UploadFile] = File(None),
@@ -220,6 +227,7 @@ async def update_expense(
             ("category", category),
             ("kind", kind),
             ("reimbursement_status", reimbursement_status),
+            ("work_item_id", work_item_id),
             ("request_id", request_id),
             ("notes", notes),
         ):

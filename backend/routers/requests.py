@@ -21,11 +21,12 @@ def list_contractors():
 def create_request(data: dict):
     db = get_db()
     cur = db.execute(
-        """INSERT INTO requests (title, contractor_id, status, due_at, summary, next_action)
-           VALUES (?, ?, ?, ?, ?, ?)""",
+        """INSERT INTO requests (title, contractor_id, work_item_id, status, due_at, summary, next_action)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (
             data["title"],
             data.get("contractor_id"),
+            data.get("work_item_id"),
             data.get("status", "draft"),
             data.get("due_at"),
             data.get("summary"),
@@ -41,7 +42,11 @@ def create_request(data: dict):
 @router.get("/requests")
 def list_requests(status: str | None = None, contractor: int | None = Query(None)):
     db = get_db()
-    sql = "SELECT r.*, c.name as contractor_name FROM requests r LEFT JOIN contractors c ON r.contractor_id = c.id WHERE r.deleted_at IS NULL"
+    sql = """SELECT r.*, c.name as contractor_name, w.title as work_item_title
+             FROM requests r
+             LEFT JOIN contractors c ON r.contractor_id = c.id
+             LEFT JOIN work_items w ON r.work_item_id = w.id
+             WHERE r.deleted_at IS NULL"""
     params = []
     if status:
         sql += " AND r.status = ?"
@@ -59,7 +64,7 @@ def list_requests(status: str | None = None, contractor: int | None = Query(None
 def update_request(request_id: int, data: dict):
     db = get_db()
     fields, values = [], []
-    for key in ("title", "contractor_id", "status", "sent_at", "due_at", "last_response_at", "summary", "next_action"):
+    for key in ("title", "contractor_id", "work_item_id", "status", "sent_at", "due_at", "last_response_at", "summary", "next_action"):
         if key in data:
             fields.append(f"{key} = ?")
             values.append(data[key])

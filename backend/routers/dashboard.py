@@ -184,6 +184,20 @@ def dashboard():
            WHERE deleted_at IS NULL AND date >= ?""",
         ((today - timedelta(days=30)).isoformat(),),
     ).fetchone()
+    work_open = db.execute(
+        """SELECT COUNT(*) as cnt
+           FROM work_items
+           WHERE deleted_at IS NULL AND status NOT IN ('done', 'cancelled')""",
+    ).fetchone()
+    work_recent = db.execute(
+        """SELECT w.id, w.title, w.category, w.status, w.priority, w.target_date,
+                  (SELECT COUNT(*) FROM requests r WHERE r.work_item_id = w.id AND r.deleted_at IS NULL) AS request_count,
+                  (SELECT COUNT(*) FROM expenses e WHERE e.work_item_id = w.id AND e.deleted_at IS NULL) AS expense_count
+           FROM work_items w
+           WHERE w.deleted_at IS NULL
+           ORDER BY w.id DESC
+           LIMIT 5""",
+    ).fetchall()
 
     db.close()
     return {
@@ -202,6 +216,10 @@ def dashboard():
         "finance": {
             "pending": {"count": finance_pending["cnt"], "total": finance_pending["total"]},
             "recent_30d": {"count": finance_recent["cnt"], "total": finance_recent["total"]},
+        },
+        "work_items": {
+            "open": {"count": work_open["cnt"]},
+            "recent": [dict(r) for r in work_recent],
         },
         "open_requests": open_count,
         "overdue_responses": overdue_responses,
